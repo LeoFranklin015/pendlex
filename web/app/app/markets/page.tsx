@@ -1,747 +1,720 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
-  Progress,
-  ProgressLabel,
-  ProgressValue,
-} from "@/components/ui/progress";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
-import {
+  Search,
   TrendingUp,
   TrendingDown,
-  Clock,
-  ShieldCheck,
-  Zap,
-  Circle,
-  ArrowUpDown,
+  LayoutGrid,
+  List,
+  ChevronDown,
+  Star,
 } from "lucide-react";
 import {
   ResponsiveContainer,
   AreaChart,
   Area,
-  XAxis,
-  YAxis,
-  Tooltip as RechartsTooltip,
-  CartesianGrid,
 } from "recharts";
 
-// Sawtooth mock data for xdSPY (resets on ex-dividend)
-const xdSpyData = Array.from({ length: 60 }, (_, i) => {
-  const cycle = i % 15;
-  const base = 1.0;
-  const growth = cycle * 0.02;
-  const drop = cycle === 14 ? 0.25 : 0;
-  return {
-    day: `Day ${i + 1}`,
-    price: +(base + growth - drop).toFixed(3),
-  };
-});
+// ---- Mock data ----
 
-// Intraday mock data for xpSPY
-const xpSpyData = Array.from({ length: 78 }, (_, i) => {
-  const base = 52.0;
-  const noise =
-    Math.sin(i * 0.2) * 1.5 +
-    Math.cos(i * 0.13) * 0.8 +
-    Math.sin(i * 0.07) * 2;
-  return {
-    time: `${9 + Math.floor((i * 5) / 60)}:${String((i * 5) % 60).padStart(2, "0")}`,
-    price: +(base + noise).toFixed(2),
-  };
-});
+interface Asset {
+  ticker: string;
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+  marketCap: number;
+  volume: number;
+  category: string[];
+  color: string;
+  sparkline: { v: number }[];
+}
 
-// Mock open positions
-const openPositions = [
+function spark(base: number, positive: boolean): { v: number }[] {
+  return Array.from({ length: 30 }, (_, i) => {
+    const trend = positive ? i * 0.015 : -i * 0.012;
+    const noise =
+      Math.sin(i * 0.7) * 0.03 +
+      Math.cos(i * 0.4) * 0.02 +
+      Math.sin(i * 1.1) * 0.015;
+    return { v: +(base * (1 + trend + noise)).toFixed(2) };
+  });
+}
+
+const assets: Asset[] = [
   {
-    id: 1,
-    direction: "Long",
-    size: "$5,000",
-    leverage: "3x",
-    entry: "$51.20",
-    current: "$52.40",
-    pnl: "+$176.40",
-    pnlPercent: "+3.4%",
-    positive: true,
-    health: 82,
+    ticker: "NVDAon",
+    name: "NVIDIA",
+    price: 176.52,
+    change: 3.55,
+    changePercent: 2.05,
+    marketCap: 97605364,
+    volume: 12400000,
+    category: ["Technology", "Large Cap", "Growth"],
+    color: "#76b900",
+    sparkline: spark(176, true),
   },
   {
-    id: 2,
-    direction: "Short",
-    size: "$2,500",
-    leverage: "2x",
-    entry: "$53.10",
-    current: "$52.40",
-    pnl: "+$66.00",
-    pnlPercent: "+2.6%",
-    positive: true,
-    health: 91,
+    ticker: "INTCon",
+    name: "Intel",
+    price: 48.4,
+    change: 4.82,
+    changePercent: 11.05,
+    marketCap: 88814970,
+    volume: 8200000,
+    category: ["Technology", "Large Cap", "Value"],
+    color: "#0071c5",
+    sparkline: spark(44, true),
   },
   {
-    id: 3,
-    direction: "Long",
-    size: "$1,200",
-    leverage: "5x",
-    entry: "$52.80",
-    current: "$52.40",
-    pnl: "-$120.00",
-    pnlPercent: "-2.0%",
-    positive: false,
-    health: 64,
+    ticker: "TQQQon",
+    name: "ProShares UltraPro QQQ",
+    price: 43.89,
+    change: 2.77,
+    changePercent: 6.74,
+    marketCap: 80421200,
+    volume: 15000000,
+    category: ["ETF", "Growth"],
+    color: "#7b2ff7",
+    sparkline: spark(41, true),
+  },
+  {
+    ticker: "SNDKon",
+    name: "SanDisk",
+    price: 708.46,
+    change: 89.82,
+    changePercent: 14.5,
+    marketCap: 42000000,
+    volume: 3200000,
+    category: ["Technology", "Growth"],
+    color: "#e4002b",
+    sparkline: spark(620, true),
+  },
+  {
+    ticker: "MUon",
+    name: "Micron Technology",
+    price: 374.76,
+    change: 46.27,
+    changePercent: 14.09,
+    marketCap: 55000000,
+    volume: 5100000,
+    category: ["Technology", "Large Cap", "Growth"],
+    color: "#00539b",
+    sparkline: spark(330, true),
+  },
+  {
+    ticker: "WDCon",
+    name: "Western Digital",
+    price: 303.69,
+    change: 36.75,
+    changePercent: 13.67,
+    marketCap: 35000000,
+    volume: 2800000,
+    category: ["Technology", "Value"],
+    color: "#6b21a8",
+    sparkline: spark(267, true),
+  },
+  {
+    ticker: "WMon",
+    name: "Waste Management",
+    price: 231.24,
+    change: 1.12,
+    changePercent: 0.49,
+    marketCap: 73000000,
+    volume: 1900000,
+    category: ["Consumer", "Large Cap", "Value"],
+    color: "#00843d",
+    sparkline: spark(230, true),
+  },
+  {
+    ticker: "VRTXon",
+    name: "Vertex Pharmaceuticals",
+    price: 448.75,
+    change: 5.23,
+    changePercent: 1.18,
+    marketCap: 68000000,
+    volume: 2100000,
+    category: ["Financials", "Large Cap", "Growth"],
+    color: "#5b2d8e",
+    sparkline: spark(443, true),
+  },
+  {
+    ticker: "NKEon",
+    name: "Nike",
+    price: 45.9,
+    change: -7.3,
+    changePercent: -13.71,
+    marketCap: 61000000,
+    volume: 9800000,
+    category: ["Consumer", "Large Cap"],
+    color: "#111111",
+    sparkline: spark(53, false),
+  },
+  {
+    ticker: "SPYon",
+    name: "SPDR S&P 500 ETF",
+    price: 662.0,
+    change: 11.46,
+    changePercent: 1.76,
+    marketCap: 520000000,
+    volume: 42000000,
+    category: ["ETF", "Large Cap", "Value"],
+    color: "#7b2ff7",
+    sparkline: spark(650, true),
+  },
+  {
+    ticker: "AAPLon",
+    name: "Apple",
+    price: 212.38,
+    change: 2.14,
+    changePercent: 1.02,
+    marketCap: 320000000,
+    volume: 35000000,
+    category: ["Technology", "Large Cap", "Growth"],
+    color: "#555555",
+    sparkline: spark(210, true),
+  },
+  {
+    ticker: "MSFTon",
+    name: "Microsoft",
+    price: 425.11,
+    change: -3.22,
+    changePercent: -0.75,
+    marketCap: 310000000,
+    volume: 22000000,
+    category: ["Technology", "Large Cap", "Growth"],
+    color: "#00a4ef",
+    sparkline: spark(428, false),
   },
 ];
 
-const circuitBreakers = [
-  { level: 1, threshold: "7%", status: "Inactive" },
-  { level: 2, threshold: "13%", status: "Inactive" },
-  { level: 3, threshold: "20%", status: "Inactive" },
+const categories = [
+  "All assets",
+  "ETF",
+  "Technology",
+  "Consumer",
+  "Financials",
+  "Large Cap",
+  "Growth",
+  "Value",
 ];
+
+const sortOptions = ["Most Popular", "Price: High", "Price: Low", "24H Change"];
+
+function useInView() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setSeen(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, seen };
+}
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
 };
 
-function SessionBanner() {
-  const [countdown, setCountdown] = useState("");
-  const [isOpen, setIsOpen] = useState(false);
+function formatCompact(n: number): string {
+  if (n >= 1e9) return "$" + (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return "$" + (n / 1e6).toFixed(0) + "M";
+  if (n >= 1e3) return "$" + (n / 1e3).toFixed(0) + "K";
+  return "$" + n.toFixed(0);
+}
 
-  useEffect(() => {
-    function update() {
-      const now = new Date();
-      const utcH = now.getUTCHours();
-      const utcM = now.getUTCMinutes();
-      const utcS = now.getUTCSeconds();
-      const day = now.getUTCDay();
-      const nowMins = utcH * 60 + utcM;
-      const isWeekday = day >= 1 && day <= 5;
-      const open = isWeekday && nowMins >= 810 && nowMins < 1200;
-      setIsOpen(open);
-
-      let targetMins: number;
-      if (open) {
-        targetMins = 1200; // close at 20:00 UTC
-      } else if (isWeekday && nowMins < 810) {
-        targetMins = 810; // open at 13:30 UTC
-      } else {
-        // after close or weekend -- next open
-        targetMins = 810 + 24 * 60; // tomorrow
-      }
-
-      const diffSecs =
-        (targetMins - nowMins) * 60 - utcS + (open ? 0 : 0);
-      const absDiff = Math.max(0, open ? (1200 - nowMins) * 60 - utcS : diffSecs);
-      const h = Math.floor(absDiff / 3600);
-      const m = Math.floor((absDiff % 3600) / 60);
-      const s = absDiff % 60;
-      setCountdown(
-        `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-      );
-    }
-    update();
-    const id = setInterval(update, 1000);
-    return () => clearInterval(id);
-  }, []);
-
+function LogoIcon({ ticker, color }: { ticker: string; color: string }) {
+  const letter = ticker.replace(/on$/, "").slice(0, 2);
   return (
     <div
-      className={`rounded-lg p-3 flex items-center justify-between ${
-        isOpen
-          ? "bg-green-500/10 border border-green-500/20"
-          : "bg-red-500/10 border border-red-500/20"
-      }`}
+      className="size-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
+      style={{ backgroundColor: color }}
     >
-      <div className="flex items-center gap-2">
-        <Circle
-          className={`size-2 fill-current ${
-            isOpen ? "text-green-500" : "text-red-500"
-          }`}
-        />
-        <span
-          className={`text-sm font-medium ${
-            isOpen ? "text-green-500" : "text-red-500"
-          }`}
-        >
-          {isOpen ? "NYSE SESSION OPEN" : "NYSE SESSION CLOSED"}
-        </span>
-      </div>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Clock className="size-3" />
-        <span className="font-mono">
-          {isOpen ? "Closes in " : "Opens in "}
-          {countdown}
-        </span>
-      </div>
+      {letter}
     </div>
   );
 }
 
-function XdSpyMarket() {
-  const [side, setSide] = useState<"buy" | "sell">("buy");
-  const [amount, setAmount] = useState("");
+// ---- Top Section Lists ----
+
+function TopGainers() {
+  const gainers = [...assets]
+    .filter((a) => a.change > 0)
+    .sort((a, b) => b.changePercent - a.changePercent)
+    .slice(0, 3);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Chart */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">
-                  xdSPY Price
-                </CardTitle>
-                <Badge className="bg-[#c8ff00]/10 text-[#c8ff00] border-0 text-[10px]">
-                  24/7 Trading
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="px-2 pb-4 pt-0">
-              <div className="h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={xdSpyData}>
-                    <defs>
-                      <linearGradient
-                        id="xdGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="#c8ff00"
-                          stopOpacity={0.25}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="#c8ff00"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="rgba(255,255,255,0.05)"
-                    />
-                    <XAxis
-                      dataKey="day"
-                      tick={{ fill: "#888", fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval={9}
-                    />
-                    <YAxis
-                      tick={{ fill: "#888", fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      domain={["dataMin - 0.05", "dataMax + 0.05"]}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: "#111",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                    />
-                    <Area
-                      type="stepAfter"
-                      dataKey="price"
-                      stroke="#c8ff00"
-                      strokeWidth={2}
-                      fill="url(#xdGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Order form + stats */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2">
-              <CardTitle className="text-sm font-medium">Trade xdSPY</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0 space-y-3">
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className={`flex-1 ${
-                    side === "buy"
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                  onClick={() => setSide("buy")}
-                >
-                  Buy
-                </Button>
-                <Button
-                  size="sm"
-                  className={`flex-1 ${
-                    side === "sell"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                  onClick={() => setSide("sell")}
-                >
-                  Sell
-                </Button>
-              </div>
-
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">
-                  Amount
-                </label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="h-10"
-                />
-              </div>
-
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Price</span>
-                <span className="font-mono">$1.28 / xdSPY</span>
-              </div>
-
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">Total</span>
-                <span className="font-mono">
-                  ${((parseFloat(amount) || 0) * 1.28).toFixed(2)}
-                </span>
-              </div>
-
-              <Button
-                className={`w-full h-9 font-medium ${
-                  side === "buy"
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-red-500 text-white hover:bg-red-600"
-                }`}
-              >
-                {side === "buy" ? "Buy" : "Sell"} xdSPY
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Market Stats
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0 space-y-2.5">
-              {[
-                { label: "Price", value: "$1.28" },
-                { label: "24h Volume", value: "$284,500" },
-                {
-                  label: "24h Change",
-                  value: "+1.2%",
-                  color: "text-green-500",
-                },
-                { label: "Market Cap", value: "$23.6M" },
-              ].map((item, i) => (
-                <div key={i} className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">
-                    {item.label}
-                  </span>
-                  <span
-                    className={`text-sm font-medium font-mono ${item.color || ""}`}
-                  >
-                    {item.value}
-                  </span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-base font-medium text-foreground">Top Gainers</h2>
+        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+          24H
+        </span>
       </div>
-    </div>
-  );
-}
-
-function XpSpyMarket() {
-  const [collateral, setCollateral] = useState("");
-  const [leverage, setLeverage] = useState(2);
-  const [direction, setDirection] = useState<"long" | "short">("long");
-  const collateralNum = parseFloat(collateral) || 0;
-  const positionSize = collateralNum * leverage;
-
-  return (
-    <div className="space-y-4">
-      <SessionBanner />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Chart */}
-        <div className="lg:col-span-2 space-y-4">
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium">
-                  xpSPY Intraday
-                </CardTitle>
-                <Badge variant="secondary" className="text-[10px] font-mono">
-                  $52.40
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="px-2 pb-4 pt-0">
-              <div className="h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={xpSpyData}>
-                    <defs>
-                      <linearGradient
-                        id="xpGradient"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="#c8ff00"
-                          stopOpacity={0.25}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="#c8ff00"
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="rgba(255,255,255,0.05)"
-                    />
-                    <XAxis
-                      dataKey="time"
-                      tick={{ fill: "#888", fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      interval={12}
-                    />
-                    <YAxis
-                      tick={{ fill: "#888", fontSize: 10 }}
-                      axisLine={false}
-                      tickLine={false}
-                      domain={["dataMin - 1", "dataMax + 1"]}
-                    />
-                    <RechartsTooltip
-                      contentStyle={{
-                        backgroundColor: "#111",
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="price"
-                      stroke="#c8ff00"
-                      strokeWidth={2}
-                      fill="url(#xpGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Open positions */}
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Open Positions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-muted-foreground border-b border-border/50">
-                      <th className="text-left py-2 font-medium">Direction</th>
-                      <th className="text-right py-2 font-medium">Size</th>
-                      <th className="text-right py-2 font-medium">Leverage</th>
-                      <th className="text-right py-2 font-medium">Entry</th>
-                      <th className="text-right py-2 font-medium">P&L</th>
-                      <th className="text-right py-2 font-medium">Health</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {openPositions.map((pos) => (
-                      <tr
-                        key={pos.id}
-                        className="border-b border-border/30 last:border-0"
-                      >
-                        <td className="py-2.5">
-                          <Badge
-                            variant="secondary"
-                            className={`text-[10px] ${
-                              pos.direction === "Long"
-                                ? "text-green-500"
-                                : "text-red-500"
-                            }`}
-                          >
-                            {pos.direction === "Long" ? (
-                              <TrendingUp className="size-3 mr-1" />
-                            ) : (
-                              <TrendingDown className="size-3 mr-1" />
-                            )}
-                            {pos.direction}
-                          </Badge>
-                        </td>
-                        <td className="text-right py-2.5 font-mono">
-                          {pos.size}
-                        </td>
-                        <td className="text-right py-2.5 font-mono">
-                          {pos.leverage}
-                        </td>
-                        <td className="text-right py-2.5 font-mono">
-                          {pos.entry}
-                        </td>
-                        <td
-                          className={`text-right py-2.5 font-mono font-medium ${
-                            pos.positive ? "text-green-500" : "text-red-500"
-                          }`}
-                        >
-                          {pos.pnl}
-                        </td>
-                        <td className="text-right py-2.5">
-                          <span
-                            className={`text-xs font-mono ${
-                              pos.health > 75
-                                ? "text-green-500"
-                                : pos.health > 50
-                                  ? "text-yellow-500"
-                                  : "text-red-500"
-                            }`}
-                          >
-                            {pos.health}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Circuit breakers */}
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <ShieldCheck className="size-4 text-muted-foreground" />
-                Circuit Breakers
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className="grid grid-cols-3 gap-3">
-                {circuitBreakers.map((cb) => (
-                  <div
-                    key={cb.level}
-                    className="rounded-lg bg-muted/30 p-3 text-center"
-                  >
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Level {cb.level}
-                    </p>
-                    <p className="text-sm font-medium font-mono">
-                      {cb.threshold}
-                    </p>
-                    <div className="flex items-center justify-center gap-1 mt-1.5">
-                      <Circle className="size-1.5 fill-green-500 text-green-500" />
-                      <span className="text-[10px] text-green-500">
-                        {cb.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Trading form */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="size-4 text-[#c8ff00]" />
-                Leverage Trade
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0 space-y-4">
-              {/* Direction */}
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  className={`flex-1 ${
-                    direction === "long"
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                  onClick={() => setDirection("long")}
-                >
-                  <TrendingUp className="size-3.5 mr-1" />
-                  Long
-                </Button>
-                <Button
-                  size="sm"
-                  className={`flex-1 ${
-                    direction === "short"
-                      ? "bg-red-500 text-white hover:bg-red-600"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                  onClick={() => setDirection("short")}
-                >
-                  <TrendingDown className="size-3.5 mr-1" />
-                  Short
-                </Button>
-              </div>
-
-              {/* Collateral */}
+      <div className="space-y-3">
+        {gainers.map((a) => (
+          <div
+            key={a.ticker}
+            className="flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <LogoIcon ticker={a.ticker} color={a.color} />
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">
-                  Collateral (USDC)
-                </label>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={collateral}
-                  onChange={(e) => setCollateral(e.target.value)}
-                  className="h-10"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Balance: 5,000.00 USDC
+                <p className="text-sm font-medium text-foreground">
+                  {a.ticker}
                 </p>
+                <p className="text-xs text-muted-foreground">{a.name}</p>
               </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-foreground">
+                ${a.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs font-mono text-[#c8ff00]">
+                <TrendingUp className="size-3 inline mr-0.5" />
+                {a.changePercent.toFixed(2)}%
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-              {/* Leverage slider */}
+function Trending() {
+  const trending = [...assets]
+    .sort((a, b) => b.marketCap - a.marketCap)
+    .slice(0, 3);
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-base font-medium text-foreground">Trending</h2>
+        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+          24H
+        </span>
+      </div>
+      <div className="space-y-3">
+        {trending.map((a) => (
+          <div
+            key={a.ticker}
+            className="flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <LogoIcon ticker={a.ticker} color={a.color} />
               <div>
-                <div className="flex justify-between mb-1.5">
-                  <label className="text-xs text-muted-foreground">
-                    Leverage
-                  </label>
-                  <span className="text-xs font-medium font-mono text-[#c8ff00]">
-                    {leverage}x
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={2}
-                  max={5}
-                  step={0.5}
-                  value={leverage}
-                  onChange={(e) => setLeverage(parseFloat(e.target.value))}
-                  className="w-full h-1.5 rounded-full appearance-none bg-muted cursor-pointer accent-[#c8ff00]"
-                />
-                <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                  <span>2x</span>
-                  <span>3x</span>
-                  <span>4x</span>
-                  <span>5x</span>
-                </div>
+                <p className="text-sm font-medium text-foreground">
+                  {a.ticker}
+                </p>
+                <p className="text-xs text-muted-foreground">{a.name}</p>
               </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-foreground">
+                ${a.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatCompact(a.marketCap)}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-              <Separator className="opacity-30" />
+function NewlyAdded() {
+  const newest = assets.slice(-3).reverse();
 
-              {/* Position details */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Position Size</span>
-                  <span className="font-mono font-medium">
-                    ${positionSize.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Entry Price</span>
-                  <span className="font-mono">$52.40</span>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Liq. Price</span>
-                  <span className="font-mono text-red-500">
-                    $
-                    {direction === "long"
-                      ? (52.4 * (1 - 0.9 / leverage)).toFixed(2)
-                      : (52.4 * (1 + 0.9 / leverage)).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Health factor */}
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-base font-medium text-foreground">Newly Added</h2>
+      </div>
+      <div className="space-y-3">
+        {newest.map((a) => (
+          <div
+            key={a.ticker}
+            className="flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <LogoIcon ticker={a.ticker} color={a.color} />
               <div>
-                <Progress value={85}>
-                  <ProgressLabel className="text-xs">
-                    Health Factor
-                  </ProgressLabel>
-                  <ProgressValue />
-                </Progress>
+                <p className="text-sm font-medium text-foreground">
+                  {a.ticker}
+                </p>
+                <p className="text-xs text-muted-foreground">{a.name}</p>
               </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-medium text-foreground">
+                ${a.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-muted-foreground">Equities Stock</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-              <Button
-                className={`w-full h-10 font-medium ${
-                  direction === "long"
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "bg-red-500 text-white hover:bg-red-600"
-                }`}
-                disabled={collateralNum <= 0}
+// ---- Asset Card ----
+
+function AssetCard({ asset }: { asset: Asset }) {
+  const positive = asset.change >= 0;
+  const bgColor = positive
+    ? "rgba(200, 255, 0, 0.06)"
+    : "rgba(255, 68, 68, 0.06)";
+  const strokeColor = positive ? "#c8ff00" : "#ff4444";
+  const gradientId = `grad-${asset.ticker}`;
+  const { ref, seen } = useInView();
+
+  return (
+    <Card ref={ref} className="overflow-hidden hover:ring-foreground/20 transition-all cursor-pointer group">
+      <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+        <LogoIcon ticker={asset.ticker} color={asset.color} />
+        <div>
+          <p className="text-sm font-medium text-foreground">{asset.ticker}</p>
+          <p className="text-xs text-muted-foreground">{asset.name}</p>
+        </div>
+      </div>
+
+      <div className="mx-3 mb-3 rounded-lg overflow-hidden" style={{ backgroundColor: bgColor }}>
+        <div className="px-4 pt-3">
+          <p className="text-2xl font-semibold text-foreground tracking-tight">
+            ${asset.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </p>
+          <p
+            className={`text-xs font-mono mt-0.5 tracking-wide ${
+              positive ? "text-[#c8ff00]" : "text-red-500"
+            }`}
+          >
+            {positive ? (
+              <TrendingUp className="size-3 inline mr-0.5" />
+            ) : (
+              <TrendingDown className="size-3 inline mr-0.5" />
+            )}
+            ${Math.abs(asset.change).toFixed(2)} (
+            {Math.abs(asset.changePercent).toFixed(2)}%) 24H
+          </p>
+        </div>
+
+        <div className="h-[100px] mt-1">
+          {seen && (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={asset.sparkline}
+                margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
               >
-                <ArrowUpDown className="size-4 mr-1.5" />
-                Open {direction === "long" ? "Long" : "Short"} Position
-              </Button>
-            </CardContent>
-          </Card>
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={strokeColor} stopOpacity={0.25} />
+                    <stop
+                      offset="100%"
+                      stopColor={strokeColor}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <Area
+                  type="monotone"
+                  dataKey="v"
+                  stroke={strokeColor}
+                  strokeWidth={2}
+                  fill={`url(#${gradientId})`}
+                  dot={false}
+                  isAnimationActive={true}
+                  animationDuration={1500}
+                  animationEasing="ease-in-out"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ---- Asset List Row ----
+
+function AssetRow({ asset }: { asset: Asset }) {
+  const positive = asset.change >= 0;
+  const { ref, seen } = useInView();
+
+  return (
+    <div ref={ref} className="flex items-center justify-between py-3 px-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
+      <div className="flex items-center gap-3 min-w-0">
+        <LogoIcon ticker={asset.ticker} color={asset.color} />
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">{asset.ticker}</p>
+          <p className="text-xs text-muted-foreground truncate">{asset.name}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-8">
+        <div className="w-[100px] h-[40px] hidden sm:block">
+          {seen && (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={asset.sparkline}
+                margin={{ top: 2, right: 0, left: 0, bottom: 2 }}
+              >
+                <Area
+                  type="monotone"
+                  dataKey="v"
+                  stroke={positive ? "#c8ff00" : "#ff4444"}
+                  strokeWidth={1.5}
+                  fill="transparent"
+                  dot={false}
+                  isAnimationActive={true}
+                  animationDuration={1200}
+                  animationEasing="ease-in-out"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="text-right min-w-[90px]">
+          <p className="text-sm font-medium text-foreground">
+            ${asset.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          </p>
+          <p
+            className={`text-xs font-mono ${
+              positive ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {positive ? "+" : ""}
+            {asset.changePercent.toFixed(2)}%
+          </p>
         </div>
       </div>
     </div>
   );
 }
+
+// ---- Main Page ----
 
 export default function MarketsPage() {
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All assets");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [sortBy, setSortBy] = useState("Most Popular");
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  const filtered = useMemo(() => {
+    let result = [...assets];
+
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (a) =>
+          a.ticker.toLowerCase().includes(q) ||
+          a.name.toLowerCase().includes(q)
+      );
+    }
+
+    if (activeCategory !== "All assets") {
+      result = result.filter((a) => a.category.includes(activeCategory));
+    }
+
+    switch (sortBy) {
+      case "Most Popular":
+        result.sort((a, b) => b.volume - a.volume);
+        break;
+      case "Price: High":
+        result.sort((a, b) => b.price - a.price);
+        break;
+      case "Price: Low":
+        result.sort((a, b) => a.price - b.price);
+        break;
+      case "24H Change":
+        result.sort((a, b) => b.changePercent - a.changePercent);
+        break;
+    }
+
+    return result;
+  }, [search, activeCategory, sortBy]);
+
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      <motion.div {...fadeUp}>
-        <h1 className="font-[family-name:var(--font-safira)] text-2xl md:text-3xl tracking-tight">
-          Markets
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Trade income and leveraged price exposure tokens.
-        </p>
+    <div className="p-4 md:p-6 pb-12 space-y-8 max-w-7xl mx-auto">
+      {/* Top Section: Gainers / Trending / Newly Added */}
+      <motion.div
+        {...fadeUp}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8"
+      >
+        <TopGainers />
+        <Trending />
+        <NewlyAdded />
       </motion.div>
 
+      <div className="h-px bg-border/50" />
+
+      {/* Explore Assets */}
       <motion.div {...fadeUp} transition={{ delay: 0.05 }}>
-        <Tabs defaultValue="xdspy">
-          <TabsList className="mb-4">
-            <TabsTrigger value="xdspy">xdSPY Income Market</TabsTrigger>
-            <TabsTrigger value="xpspy">xpSPY Leveraged Market</TabsTrigger>
-          </TabsList>
-          <TabsContent value="xdspy">
-            <XdSpyMarket />
-          </TabsContent>
-          <TabsContent value="xpspy">
-            <XpSpyMarket />
-          </TabsContent>
-        </Tabs>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+          <div className="flex items-center gap-2">
+            <h2 className="font-[family-name:var(--font-safira)] text-xl md:text-2xl tracking-tight text-foreground">
+              Explore Assets
+            </h2>
+            <span className="text-xs text-muted-foreground align-super">
+              *{assets.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Star className="size-3.5" />
+            <span>Market Open</span>
+            <span className="text-[#c8ff00] font-medium">(Regular)</span>
+          </div>
+        </div>
+
+        {/* Filters bar */}
+        <div className="flex flex-col gap-3 mb-6">
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar">
+            {/* Search */}
+            <div className="relative shrink-0 w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Search asset name or ticker"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-9 bg-muted/30 border-border/50"
+              />
+            </div>
+
+            {/* Category pills */}
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
+                  activeCategory === cat
+                    ? "border-foreground/40 bg-foreground/10 text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+
+            <div className="ml-auto flex items-center gap-2 shrink-0">
+              {/* View toggle */}
+              <div className="flex items-center rounded-lg border border-border/50 p-0.5">
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-foreground/10 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <LayoutGrid className="size-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`p-1.5 rounded-md transition-colors ${
+                    viewMode === "list"
+                      ? "bg-foreground/10 text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <List className="size-4" />
+                </button>
+              </div>
+
+              {/* Sort */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowSortMenu(!showSortMenu)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/50 text-xs font-medium text-foreground hover:bg-muted/30 transition-colors"
+                >
+                  {sortBy}
+                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                </button>
+                {showSortMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setShowSortMenu(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1 z-50 w-40 rounded-lg border border-border/50 bg-card shadow-lg py-1">
+                      {sortOptions.map((opt) => (
+                        <button
+                          key={opt}
+                          onClick={() => {
+                            setSortBy(opt);
+                            setShowSortMenu(false);
+                          }}
+                          className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
+                            sortBy === opt
+                              ? "text-[#c8ff00] bg-muted/30"
+                              : "text-foreground hover:bg-muted/30"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Asset Grid / List */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground text-sm">
+            No assets found matching your search.
+          </div>
+        ) : viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((asset, i) => (
+              <motion.div
+                key={asset.ticker}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.03 }}
+              >
+                <AssetCard asset={asset} />
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <Card className="overflow-hidden">
+            {filtered.map((asset, i) => (
+              <motion.div
+                key={asset.ticker}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: i * 0.02 }}
+              >
+                <AssetRow asset={asset} />
+              </motion.div>
+            ))}
+          </Card>
+        )}
       </motion.div>
     </div>
   );

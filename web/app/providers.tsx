@@ -2,6 +2,25 @@
 
 import { PrivyProvider } from "@privy-io/react-auth";
 import { ReactLenis } from "lenis/react";
+import { usePathname } from "next/navigation";
+
+function SmoothScroll({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isAppRoute = pathname.startsWith("/app");
+
+  // Lenis root mode hijacks scroll on <html>, which breaks nested
+  // overflow-y-auto containers like the app layout's <main>.
+  // Only enable it for the marketing/landing pages.
+  if (isAppRoute) {
+    return <>{children}</>;
+  }
+
+  return (
+    <ReactLenis root options={{ lerp: 0.1, duration: 1.2, smoothWheel: true }}>
+      {children}
+    </ReactLenis>
+  );
+}
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -21,9 +40,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         },
       }}
     >
-      <ReactLenis root options={{ lerp: 0.1, duration: 1.2, smoothWheel: true }}>
-        {children}
-      </ReactLenis>
+      <SmoothScroll>{children}</SmoothScroll>
     </PrivyProvider>
   );
 }

@@ -165,5 +165,14 @@
 
 
 button {
-  cursor: pointer !important;  
+  cursor: pointer !important;
+}
+
+/* Hide scrollbar for filter tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
