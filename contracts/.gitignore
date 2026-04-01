@@ -1,0 +1,9 @@
+# Compiler output
+out/
+cache/
+
+# Dependencies (reinstall with `forge install`)
+lib/
+
+# Environment
+.env
