@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import {
   Search,
   TrendingUp,
@@ -12,367 +14,167 @@ import {
   List,
   ChevronDown,
   Star,
+  Circle,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-} from "recharts";
+import { type Asset } from "@/lib/market-data";
+import { usePythPrices } from "@/lib/use-pyth-prices";
 
-// ---- Mock data ----
-
-interface Asset {
-  ticker: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-  marketCap: number;
-  volume: number;
-  category: string[];
-  color: string;
-  sparkline: { v: number }[];
-}
-
-function spark(base: number, positive: boolean): { v: number }[] {
-  return Array.from({ length: 30 }, (_, i) => {
-    const trend = positive ? i * 0.015 : -i * 0.012;
-    const noise =
-      Math.sin(i * 0.7) * 0.03 +
-      Math.cos(i * 0.4) * 0.02 +
-      Math.sin(i * 1.1) * 0.015;
-    return { v: +(base * (1 + trend + noise)).toFixed(2) };
-  });
-}
-
-const assets: Asset[] = [
-  {
-    ticker: "NVDAon",
-    name: "NVIDIA",
-    price: 176.52,
-    change: 3.55,
-    changePercent: 2.05,
-    marketCap: 97605364,
-    volume: 12400000,
-    category: ["Technology", "Large Cap", "Growth"],
-    color: "#76b900",
-    sparkline: spark(176, true),
-  },
-  {
-    ticker: "INTCon",
-    name: "Intel",
-    price: 48.4,
-    change: 4.82,
-    changePercent: 11.05,
-    marketCap: 88814970,
-    volume: 8200000,
-    category: ["Technology", "Large Cap", "Value"],
-    color: "#0071c5",
-    sparkline: spark(44, true),
-  },
-  {
-    ticker: "TQQQon",
-    name: "ProShares UltraPro QQQ",
-    price: 43.89,
-    change: 2.77,
-    changePercent: 6.74,
-    marketCap: 80421200,
-    volume: 15000000,
-    category: ["ETF", "Growth"],
-    color: "#7b2ff7",
-    sparkline: spark(41, true),
-  },
-  {
-    ticker: "SNDKon",
-    name: "SanDisk",
-    price: 708.46,
-    change: 89.82,
-    changePercent: 14.5,
-    marketCap: 42000000,
-    volume: 3200000,
-    category: ["Technology", "Growth"],
-    color: "#e4002b",
-    sparkline: spark(620, true),
-  },
-  {
-    ticker: "MUon",
-    name: "Micron Technology",
-    price: 374.76,
-    change: 46.27,
-    changePercent: 14.09,
-    marketCap: 55000000,
-    volume: 5100000,
-    category: ["Technology", "Large Cap", "Growth"],
-    color: "#00539b",
-    sparkline: spark(330, true),
-  },
-  {
-    ticker: "WDCon",
-    name: "Western Digital",
-    price: 303.69,
-    change: 36.75,
-    changePercent: 13.67,
-    marketCap: 35000000,
-    volume: 2800000,
-    category: ["Technology", "Value"],
-    color: "#6b21a8",
-    sparkline: spark(267, true),
-  },
-  {
-    ticker: "WMon",
-    name: "Waste Management",
-    price: 231.24,
-    change: 1.12,
-    changePercent: 0.49,
-    marketCap: 73000000,
-    volume: 1900000,
-    category: ["Consumer", "Large Cap", "Value"],
-    color: "#00843d",
-    sparkline: spark(230, true),
-  },
-  {
-    ticker: "VRTXon",
-    name: "Vertex Pharmaceuticals",
-    price: 448.75,
-    change: 5.23,
-    changePercent: 1.18,
-    marketCap: 68000000,
-    volume: 2100000,
-    category: ["Financials", "Large Cap", "Growth"],
-    color: "#5b2d8e",
-    sparkline: spark(443, true),
-  },
-  {
-    ticker: "NKEon",
-    name: "Nike",
-    price: 45.9,
-    change: -7.3,
-    changePercent: -13.71,
-    marketCap: 61000000,
-    volume: 9800000,
-    category: ["Consumer", "Large Cap"],
-    color: "#111111",
-    sparkline: spark(53, false),
-  },
-  {
-    ticker: "SPYon",
-    name: "SPDR S&P 500 ETF",
-    price: 662.0,
-    change: 11.46,
-    changePercent: 1.76,
-    marketCap: 520000000,
-    volume: 42000000,
-    category: ["ETF", "Large Cap", "Value"],
-    color: "#7b2ff7",
-    sparkline: spark(650, true),
-  },
-  {
-    ticker: "AAPLon",
-    name: "Apple",
-    price: 212.38,
-    change: 2.14,
-    changePercent: 1.02,
-    marketCap: 320000000,
-    volume: 35000000,
-    category: ["Technology", "Large Cap", "Growth"],
-    color: "#555555",
-    sparkline: spark(210, true),
-  },
-  {
-    ticker: "MSFTon",
-    name: "Microsoft",
-    price: 425.11,
-    change: -3.22,
-    changePercent: -0.75,
-    marketCap: 310000000,
-    volume: 22000000,
-    category: ["Technology", "Large Cap", "Growth"],
-    color: "#00a4ef",
-    sparkline: spark(428, false),
-  },
-];
-
-const categories = [
-  "All assets",
-  "ETF",
-  "Technology",
-  "Consumer",
-  "Financials",
-  "Large Cap",
-  "Growth",
-  "Value",
-];
-
-const sortOptions = ["Most Popular", "Price: High", "Price: Low", "24H Change"];
-
-function useInView() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [seen, setSeen] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setSeen(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.15 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return { ref, seen };
-}
+const filterOptions = ["All assets", "Stock", "ETF"];
+const sortOptions = ["Name", "Price: High", "Price: Low", "24H Change"];
 
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
 };
 
-function formatCompact(n: number): string {
-  if (n >= 1e9) return "$" + (n / 1e9).toFixed(1) + "B";
-  if (n >= 1e6) return "$" + (n / 1e6).toFixed(0) + "M";
-  if (n >= 1e3) return "$" + (n / 1e3).toFixed(0) + "K";
-  return "$" + n.toFixed(0);
-}
-
-function LogoIcon({ ticker, color }: { ticker: string; color: string }) {
-  const letter = ticker.replace(/on$/, "").slice(0, 2);
+function LogoIcon({ asset, size = "md" }: { asset: Asset; size?: "sm" | "md" }) {
+  const dim = size === "sm" ? "size-8" : "size-10";
+  if (asset.logo) {
+    return (
+      <img
+        src={asset.logo}
+        alt={asset.ticker}
+        className={`${dim} rounded-lg shrink-0 object-cover`}
+      />
+    );
+  }
+  const letter = asset.symbol.slice(0, 2);
   return (
     <div
-      className="size-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-      style={{ backgroundColor: color }}
+      className={`${dim} rounded-lg flex items-center justify-center text-xs font-bold text-white shrink-0`}
+      style={{ backgroundColor: asset.color }}
     >
       {letter}
     </div>
   );
 }
 
-// ---- Top Section Lists ----
+// ---- Top Section: Live Prices List ----
 
-function TopGainers() {
+function TopGainers({ assets }: { assets: Asset[] }) {
   const gainers = [...assets]
-    .filter((a) => a.change > 0)
+    .filter((a) => a.price > 0 && a.change > 0)
     .sort((a, b) => b.changePercent - a.changePercent)
     .slice(0, 3);
+
+  if (gainers.length === 0) return null;
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-base font-medium text-foreground">Top Gainers</h2>
         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-          24H
+          LIVE
         </span>
       </div>
       <div className="space-y-3">
         {gainers.map((a) => (
-          <div
-            key={a.ticker}
-            className="flex items-center justify-between group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <LogoIcon ticker={a.ticker} color={a.color} />
-              <div>
+          <Link key={a.ticker} href={`/app/markets/${a.ticker}`}>
+            <div className="flex items-center justify-between group cursor-pointer hover:bg-muted/20 rounded-lg px-2 py-1.5 -mx-2 transition-colors">
+              <div className="flex items-center gap-3">
+                <LogoIcon asset={a} size="sm" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">{a.ticker}</p>
+                  <p className="text-xs text-muted-foreground">{a.name}</p>
+                </div>
+              </div>
+              <div className="text-right">
                 <p className="text-sm font-medium text-foreground">
-                  {a.ticker}
+                  ${a.price.toFixed(2)}
                 </p>
-                <p className="text-xs text-muted-foreground">{a.name}</p>
+                <p className="text-xs font-mono text-[#c8ff00]">
+                  <TrendingUp className="size-3 inline mr-0.5" />
+                  +{a.changePercent.toFixed(2)}%
+                </p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-foreground">
-                ${a.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-xs font-mono text-[#c8ff00]">
-                <TrendingUp className="size-3 inline mr-0.5" />
-                {a.changePercent.toFixed(2)}%
-              </p>
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
   );
 }
 
-function Trending() {
+function TrendingAssets({ assets }: { assets: Asset[] }) {
   const trending = [...assets]
-    .sort((a, b) => b.marketCap - a.marketCap)
+    .filter((a) => a.price > 0)
+    .sort((a, b) => b.price - a.price)
     .slice(0, 3);
+
+  if (trending.length === 0) return null;
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
         <h2 className="text-base font-medium text-foreground">Trending</h2>
         <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-          24H
+          LIVE
         </span>
       </div>
       <div className="space-y-3">
-        {trending.map((a) => (
-          <div
-            key={a.ticker}
-            className="flex items-center justify-between group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <LogoIcon ticker={a.ticker} color={a.color} />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {a.ticker}
-                </p>
-                <p className="text-xs text-muted-foreground">{a.name}</p>
+        {trending.map((a) => {
+          const positive = a.change >= 0;
+          return (
+            <Link key={a.ticker} href={`/app/markets/${a.ticker}`}>
+              <div className="flex items-center justify-between group cursor-pointer hover:bg-muted/20 rounded-lg px-2 py-1.5 -mx-2 transition-colors">
+                <div className="flex items-center gap-3">
+                  <LogoIcon asset={a} size="sm" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{a.ticker}</p>
+                    <p className="text-xs text-muted-foreground">{a.name}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-foreground">
+                    ${a.price.toFixed(2)}
+                  </p>
+                  <p className={`text-xs font-mono ${positive ? "text-[#c8ff00]" : "text-red-500"}`}>
+                    {positive ? "+" : ""}{a.changePercent.toFixed(2)}%
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-foreground">
-                ${a.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatCompact(a.marketCap)}
-              </p>
-            </div>
-          </div>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function NewlyAdded() {
-  const newest = assets.slice(-3).reverse();
+function AllAssetsList({ assets }: { assets: Asset[] }) {
+  const loaded = assets.filter((a) => a.price > 0);
+  if (loaded.length === 0) return null;
 
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-base font-medium text-foreground">Newly Added</h2>
+        <h2 className="text-base font-medium text-foreground">All xStocks</h2>
       </div>
       <div className="space-y-3">
-        {newest.map((a) => (
-          <div
-            key={a.ticker}
-            className="flex items-center justify-between group cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <LogoIcon ticker={a.ticker} color={a.color} />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  {a.ticker}
-                </p>
-                <p className="text-xs text-muted-foreground">{a.name}</p>
+        {loaded.slice(0, 3).map((a) => {
+          const positive = a.change >= 0;
+          return (
+            <Link key={a.ticker} href={`/app/markets/${a.ticker}`}>
+              <div className="flex items-center justify-between group cursor-pointer hover:bg-muted/20 rounded-lg px-2 py-1.5 -mx-2 transition-colors">
+                <div className="flex items-center gap-3">
+                  <LogoIcon asset={a} size="sm" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{a.ticker}</p>
+                    <p className="text-xs text-muted-foreground">{a.name}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium text-foreground">
+                    ${a.price.toFixed(2)}
+                  </p>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {a.type}
+                  </Badge>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-foreground">
-                ${a.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-xs text-muted-foreground">Equities Stock</p>
-            </div>
-          </div>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -382,77 +184,57 @@ function NewlyAdded() {
 
 function AssetCard({ asset }: { asset: Asset }) {
   const positive = asset.change >= 0;
-  const bgColor = positive
-    ? "rgba(200, 255, 0, 0.06)"
-    : "rgba(255, 68, 68, 0.06)";
-  const strokeColor = positive ? "#c8ff00" : "#ff4444";
-  const gradientId = `grad-${asset.ticker}`;
-  const { ref, seen } = useInView();
+  const loading = asset.price === 0;
 
   return (
-    <Card ref={ref} className="overflow-hidden hover:ring-foreground/20 transition-all cursor-pointer group">
-      <div className="px-4 pt-4 pb-2 flex items-center gap-3">
-        <LogoIcon ticker={asset.ticker} color={asset.color} />
-        <div>
-          <p className="text-sm font-medium text-foreground">{asset.ticker}</p>
-          <p className="text-xs text-muted-foreground">{asset.name}</p>
-        </div>
-      </div>
-
-      <div className="mx-3 mb-3 rounded-lg overflow-hidden" style={{ backgroundColor: bgColor }}>
-        <div className="px-4 pt-3">
-          <p className="text-2xl font-semibold text-foreground tracking-tight">
-            ${asset.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </p>
-          <p
-            className={`text-xs font-mono mt-0.5 tracking-wide ${
-              positive ? "text-[#c8ff00]" : "text-red-500"
-            }`}
-          >
-            {positive ? (
-              <TrendingUp className="size-3 inline mr-0.5" />
-            ) : (
-              <TrendingDown className="size-3 inline mr-0.5" />
-            )}
-            ${Math.abs(asset.change).toFixed(2)} (
-            {Math.abs(asset.changePercent).toFixed(2)}%) 24H
-          </p>
+    <Link href={`/app/markets/${asset.ticker}`}>
+      <Card className="overflow-hidden hover:ring-foreground/20 transition-all cursor-pointer group">
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <LogoIcon asset={asset} />
+            <div>
+              <p className="text-sm font-medium text-foreground">{asset.ticker}</p>
+              <p className="text-xs text-muted-foreground">{asset.name}</p>
+            </div>
+          </div>
+          <Badge variant="secondary" className="text-[10px]">
+            {asset.type}
+          </Badge>
         </div>
 
-        <div className="h-[100px] mt-1">
-          {seen && (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={asset.sparkline}
-                margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={strokeColor} stopOpacity={0.25} />
-                    <stop
-                      offset="100%"
-                      stopColor={strokeColor}
-                      stopOpacity={0}
-                    />
-                  </linearGradient>
-                </defs>
-                <Area
-                  type="monotone"
-                  dataKey="v"
-                  stroke={strokeColor}
-                  strokeWidth={2}
-                  fill={`url(#${gradientId})`}
-                  dot={false}
-                  isAnimationActive={true}
-                  animationDuration={1500}
-                  animationEasing="ease-in-out"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+        <div className="px-4 pb-4">
+          {loading ? (
+            <div className="h-16 flex items-center">
+              <div className="h-3 w-24 bg-muted/50 rounded animate-pulse" />
+            </div>
+          ) : (
+            <>
+              <p className="text-2xl font-semibold text-foreground tracking-tight">
+                ${asset.price.toFixed(2)}
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span
+                  className={`text-xs font-mono ${
+                    positive ? "text-[#c8ff00]" : "text-red-500"
+                  }`}
+                >
+                  {positive ? (
+                    <TrendingUp className="size-3 inline mr-0.5" />
+                  ) : (
+                    <TrendingDown className="size-3 inline mr-0.5" />
+                  )}
+                  ${Math.abs(asset.change).toFixed(2)} (
+                  {positive ? "+" : ""}
+                  {asset.changePercent.toFixed(2)}%)
+                </span>
+                <Circle className="size-1 fill-[#c8ff00] text-[#c8ff00]" />
+                <span className="text-[10px] text-muted-foreground">Pyth Live</span>
+              </div>
+            </>
           )}
         </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 }
 
@@ -460,67 +242,56 @@ function AssetCard({ asset }: { asset: Asset }) {
 
 function AssetRow({ asset }: { asset: Asset }) {
   const positive = asset.change >= 0;
-  const { ref, seen } = useInView();
+  const loading = asset.price === 0;
 
   return (
-    <div ref={ref} className="flex items-center justify-between py-3 px-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
-      <div className="flex items-center gap-3 min-w-0">
-        <LogoIcon ticker={asset.ticker} color={asset.color} />
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground">{asset.ticker}</p>
-          <p className="text-xs text-muted-foreground truncate">{asset.name}</p>
+    <Link href={`/app/markets/${asset.ticker}`}>
+      <div className="flex items-center justify-between py-3 px-4 border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors cursor-pointer">
+        <div className="flex items-center gap-3 min-w-0">
+          <LogoIcon asset={asset} />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium text-foreground">{asset.ticker}</p>
+              <Badge variant="secondary" className="text-[10px]">
+                {asset.type}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground truncate">{asset.name}</p>
+          </div>
         </div>
-      </div>
 
-      <div className="flex items-center gap-8">
-        <div className="w-[100px] h-[40px] hidden sm:block">
-          {seen && (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={asset.sparkline}
-                margin={{ top: 2, right: 0, left: 0, bottom: 2 }}
+        <div className="text-right min-w-[120px]">
+          {loading ? (
+            <div className="h-3 w-20 bg-muted/50 rounded animate-pulse ml-auto" />
+          ) : (
+            <>
+              <p className="text-sm font-medium text-foreground">
+                ${asset.price.toFixed(2)}
+              </p>
+              <p
+                className={`text-xs font-mono ${
+                  positive ? "text-[#c8ff00]" : "text-red-500"
+                }`}
               >
-                <Area
-                  type="monotone"
-                  dataKey="v"
-                  stroke={positive ? "#c8ff00" : "#ff4444"}
-                  strokeWidth={1.5}
-                  fill="transparent"
-                  dot={false}
-                  isAnimationActive={true}
-                  animationDuration={1200}
-                  animationEasing="ease-in-out"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+                {positive ? "+" : ""}
+                {asset.changePercent.toFixed(2)}%
+              </p>
+            </>
           )}
         </div>
-
-        <div className="text-right min-w-[90px]">
-          <p className="text-sm font-medium text-foreground">
-            ${asset.price.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-          </p>
-          <p
-            className={`text-xs font-mono ${
-              positive ? "text-green-500" : "text-red-500"
-            }`}
-          >
-            {positive ? "+" : ""}
-            {asset.changePercent.toFixed(2)}%
-          </p>
-        </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
 // ---- Main Page ----
 
 export default function MarketsPage() {
+  const assets = usePythPrices();
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("All assets");
+  const [activeFilter, setActiveFilter] = useState("All assets");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState("Most Popular");
+  const [sortBy, setSortBy] = useState("Name");
   const [showSortMenu, setShowSortMenu] = useState(false);
 
   const filtered = useMemo(() => {
@@ -531,18 +302,18 @@ export default function MarketsPage() {
       result = result.filter(
         (a) =>
           a.ticker.toLowerCase().includes(q) ||
-          a.name.toLowerCase().includes(q)
+          a.name.toLowerCase().includes(q) ||
+          a.symbol.toLowerCase().includes(q)
       );
     }
 
-    if (activeCategory !== "All assets") {
-      result = result.filter((a) => a.category.includes(activeCategory));
+    if (activeFilter === "Stock") {
+      result = result.filter((a) => a.type === "Stock");
+    } else if (activeFilter === "ETF") {
+      result = result.filter((a) => a.type === "ETF");
     }
 
     switch (sortBy) {
-      case "Most Popular":
-        result.sort((a, b) => b.volume - a.volume);
-        break;
       case "Price: High":
         result.sort((a, b) => b.price - a.price);
         break;
@@ -555,18 +326,18 @@ export default function MarketsPage() {
     }
 
     return result;
-  }, [search, activeCategory, sortBy]);
+  }, [assets, search, activeFilter, sortBy]);
 
   return (
     <div className="p-4 md:p-6 pb-12 space-y-8 max-w-7xl mx-auto">
-      {/* Top Section: Gainers / Trending / Newly Added */}
+      {/* Top Section */}
       <motion.div
         {...fadeUp}
         className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8"
       >
-        <TopGainers />
-        <Trending />
-        <NewlyAdded />
+        <TopGainers assets={assets} />
+        <TrendingAssets assets={assets} />
+        <AllAssetsList assets={assets} />
       </motion.div>
 
       <div className="h-px bg-border/50" />
@@ -576,16 +347,16 @@ export default function MarketsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-2">
             <h2 className="font-[family-name:var(--font-safira)] text-xl md:text-2xl tracking-tight text-foreground">
-              Explore Assets
+              Explore xStocks
             </h2>
             <span className="text-xs text-muted-foreground align-super">
               *{assets.length}
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Star className="size-3.5" />
-            <span>Market Open</span>
-            <span className="text-[#c8ff00] font-medium">(Regular)</span>
+            <Circle className="size-2 fill-[#c8ff00] text-[#c8ff00]" />
+            <span>Pyth Network</span>
+            <span className="text-[#c8ff00] font-medium">(Live)</span>
           </div>
         </div>
 
@@ -603,18 +374,18 @@ export default function MarketsPage() {
               />
             </div>
 
-            {/* Category pills */}
-            {categories.map((cat) => (
+            {/* Filter pills */}
+            {filterOptions.map((opt) => (
               <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
+                key={opt}
+                onClick={() => setActiveFilter(opt)}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
-                  activeCategory === cat
+                  activeFilter === opt
                     ? "border-foreground/40 bg-foreground/10 text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
                 }`}
               >
-                {cat}
+                {opt}
               </button>
             ))}
 
