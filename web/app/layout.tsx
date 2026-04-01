@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 import Providers from "./providers";
+import { APP_NAME, APP_NAME_FULL } from "@/lib/constants";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,23 +30,23 @@ function metadataBaseUrl() {
 export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),
   title: {
-    default: "xStream | Split xStocks into dx and px",
-    template: "%s | xStream",
+    default: `${APP_NAME} | Split xStocks into dx and px`,
+    template: `%s | ${APP_NAME}`,
   },
   description:
-    "xStream is a DeFi protocol on Base that splits tokenized equities (xStocks) into a dividend token (dx) and a principal token (px): yield around the clock, price exposure in NYSE hours, Pyth-powered pricing, and recombination to the underlying.",
-  applicationName: "xstream Markets",
+    `${APP_NAME} is a DeFi protocol on Base that splits tokenized equities (xStocks) into a dividend token (dx) and a principal token (px): yield around the clock, price exposure in NYSE hours, Pyth-powered pricing, and recombination to the underlying.`,
+  applicationName: APP_NAME_FULL,
   manifest: "/site.webmanifest",
   openGraph: {
-    title: "xStream | Split xStocks into dx and px",
+    title: `${APP_NAME} | Split xStocks into dx and px`,
     description:
       "Yield on dx 24/7. Price on px when the tape is open. One vault, two markets, recombine anytime.",
     type: "website",
-    siteName: "xStream",
+    siteName: APP_NAME,
   },
   twitter: {
     card: "summary_large_image",
-    title: "xStream | Split xStocks into dx and px",
+    title: `${APP_NAME} | Split xStocks into dx and px`,
     description:
       "Split tokenized equities into dividend and principal tokens on Base. dx for yield, px for session-bound price exposure.",
   },

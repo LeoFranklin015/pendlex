@@ -1,4 +1,7 @@
-export const APP_NAME = "xstream";
+/** Product wordmark (headers, UI) */
+export const APP_NAME = "xStream";
+/** Full legal-style product name */
+export const APP_NAME_FULL = "xStream Markets";
 
 // Token definitions
 export const TOKENS = {

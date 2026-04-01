@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +25,8 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { APP_NAME_FULL } from "@/lib/constants";
+import { LogoWordmark } from "@/components/LogoWordmark";
 
 const navLinks = [
   { href: "/app", label: "Dashboard", icon: LayoutDashboard },
@@ -98,17 +99,7 @@ function SidebarContent({ pathname }: { pathname: string }) {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 pb-2">
-        <Link href="/app" className="flex items-center gap-2">
-          <Image
-            src="/logo-transparent.png"
-            alt="xstream"
-            width={32}
-            height={32}
-          />
-          <span className="font-[family-name:var(--font-safira)] text-lg tracking-tight">
-            x<span className="text-[#c8ff00]">stream</span>
-          </span>
-        </Link>
+        <LogoWordmark href="/app" />
       </div>
       <Separator className="mx-4 w-auto opacity-50" />
       <nav className="flex flex-col gap-1 p-3 flex-1">
@@ -126,7 +117,7 @@ function SidebarContent({ pathname }: { pathname: string }) {
       </nav>
       <div className="p-4 pt-2">
         <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-          <p className="font-medium text-foreground mb-1">xstream Markets</p>
+          <p className="font-medium text-foreground mb-1">{APP_NAME_FULL}</p>
           <p>dx yield, px price, one vault.</p>
         </div>
       </div>
@@ -162,20 +153,27 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex h-14 items-center justify-between border-b border-border/50 bg-[#0e0e0e]/80 backdrop-blur-sm px-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger
                 render={
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="md:hidden"
+                    className="md:hidden shrink-0"
                   />
                 }
               >
                 <Menu className="size-5" />
               </SheetTrigger>
             </Sheet>
+
+            <LogoWordmark
+              href="/app"
+              className="min-w-0 shrink md:hidden"
+              iconSize={28}
+              textClassName="text-sm sm:text-base"
+            />
 
             <div className="flex items-center gap-2">
               <Circle

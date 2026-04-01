@@ -1,8 +1,9 @@
 import { ImageResponse } from "next/og";
+import { APP_NAME } from "@/lib/constants";
 
 export const runtime = "edge";
 
-export const alt = "xStream splits tokenized equities into dividend and principal tokens";
+export const alt = `${APP_NAME} splits tokenized equities into dividend and principal tokens`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -47,7 +48,7 @@ export default function OpenGraphImage() {
               color: "#f0f0f0",
             }}
           >
-            x<span style={{ color: "#c8ff00" }}>stream</span>
+            x<span style={{ color: "#c8ff00" }}>Stream</span>
           </span>
         </div>
         <div style={{ zIndex: 1, maxWidth: 880 }}>

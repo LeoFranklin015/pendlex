@@ -1,5 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
+import { LogoWordmark } from "@/components/LogoWordmark";
+import { APP_NAME_FULL } from "@/lib/constants";
 
 const columns = [
   {
@@ -38,18 +39,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-2">
-              <Image
-                src="/logo-transparent.png"
-                alt="xstream logo"
-                width={28}
-                height={28}
-                className="h-7 w-7"
-              />
-              <span className="text-base font-semibold tracking-tight text-foreground">
-                xstream
-              </span>
-            </Link>
+            <LogoWordmark href="/" iconSize={28} textClassName="text-base" />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
               Split tokenized ETFs into income and price exposure tokens. Two
               markets. One vault.
@@ -81,7 +71,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} xstream Markets. All rights
+            &copy; {new Date().getFullYear()} {APP_NAME_FULL}. All rights
             reserved.
           </p>
           <div className="flex gap-6">

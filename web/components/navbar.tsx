@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { Menu } from "lucide-react";
@@ -13,6 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { LogoWordmark } from "@/components/LogoWordmark";
 
 const navLinks = [
   { label: "Markets", href: "/app/markets" },
@@ -35,18 +35,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-xl border-b border-border">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <Image
-            src="/logo-transparent.png"
-            alt="xstream logo"
-            width={32}
-            height={32}
-            className="h-8 w-8"
-          />
-          <span className="text-lg font-semibold tracking-tight text-foreground">
-            xstream
-          </span>
-        </Link>
+        <LogoWordmark href="/" />
 
         {/* Desktop nav */}
         <div className="hidden items-center gap-1 md:flex">
@@ -95,15 +84,7 @@ export default function Navbar() {
             <SheetContent side="right" className="w-72 bg-background">
               <SheetHeader>
                 <SheetTitle>
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src="/logo-transparent.png"
-                      alt="xstream logo"
-                      width={24}
-                      height={24}
-                    />
-                    <span className="font-semibold">xstream</span>
-                  </div>
+                  <LogoWordmark href="/" iconSize={24} textClassName="text-sm" />
                 </SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-1 px-4">

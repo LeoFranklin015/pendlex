@@ -7,6 +7,7 @@ import { DOCS_NAV } from "@/lib/docs-toc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { APP_NAME } from "@/lib/constants";
 
 function ProseP({ children }: { children: ReactNode }) {
   return <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">{children}</p>;
@@ -49,7 +50,7 @@ export default function DocsPage() {
               Documentation
             </h1>
             <p className="mt-3 text-lg text-muted-foreground">
-              xstream splits tokenized equity ETFs (xStocks) into a dividend token
+              {APP_NAME} splits tokenized equity ETFs (xStocks) into a dividend token
               (dx) and a principal token (px) on Base. This reference summarizes
               product behavior from the protocol specification.
             </p>
@@ -59,7 +60,7 @@ export default function DocsPage() {
             <section id="overview" className="scroll-mt-28">
               <SectionTitle>Overview</SectionTitle>
               <ProseP>
-                xstream is a DeFi protocol that splits xStocks into two tradeable
+                {APP_NAME} is a DeFi protocol that splits xStocks into two tradeable
                 instruments: <strong className="text-foreground/90">dx</strong>{" "}
                 (dividend rights) and{" "}
                 <strong className="text-foreground/90">px</strong> (pure price
@@ -82,7 +83,7 @@ export default function DocsPage() {
               <ProseP>
                 Whole xStocks bundle yield and price. Income-oriented users must take
                 equity volatility they do not want. Short-horizon traders implicitly
-                pay for dividend yield even on intraday positions. xstream unbundles
+                pay for dividend yield even on intraday positions. {APP_NAME} unbundles
                 those payoffs so each audience can trade the exposure it actually
                 wants.
               </ProseP>

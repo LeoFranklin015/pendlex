@@ -7,8 +7,6 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   ChevronDown,
@@ -25,7 +23,8 @@ import {
   AnimAccumulatorPulse,
   AnimPhaseDots,
 } from "./pitch-visuals";
-
+import { APP_NAME } from "@/lib/constants";
+import { LogoWordmark } from "@/components/LogoWordmark";
 
 type SlideDef = {
   id: string;
@@ -43,7 +42,7 @@ type SlideDef = {
 const slides: SlideDef[] = [
   {
     id: "title",
-    section: "xstream",
+    section: APP_NAME,
     title: "Split yield from price",
     centerTitle: true,
     visual: <AnimSplitTokens />,
@@ -417,21 +416,18 @@ export default function PitchDeck() {
 
       {/* Top bar */}
       <div className="pointer-events-auto absolute left-0 right-0 top-0 z-[110] flex items-center justify-between px-4 py-4 sm:px-6">
-        <Link
+        <LogoWordmark
           href="/"
-          className="flex items-center gap-2 text-sm text-white/50 transition-colors hover:text-white"
-        >
-          <Image
-            src="/logo-transparent.png"
-            alt=""
-            width={28}
-            height={28}
-            className="opacity-90"
-          />
-          <span className="font-mono text-xs uppercase tracking-widest">
-            xstream pitch
-          </span>
-        </Link>
+          iconSize={28}
+          imageClassName="opacity-90"
+          textClassName="text-base text-white/90 transition-colors group-hover:text-white"
+          className="text-sm text-white/70 transition-colors hover:text-white"
+          suffix={
+            <span className="font-mono text-xs uppercase tracking-widest text-white/50 group-hover:text-white/80">
+              pitch
+            </span>
+          }
+        />
         <span className="hidden font-mono text-[10px] text-white/35 sm:block">
           arrows / space to navigate
         </span>

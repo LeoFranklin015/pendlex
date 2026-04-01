@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useSpring, useMotionValueEvent } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { APP_NAME } from "@/lib/constants";
 
 /** Title slide: xStock splits into dx + px (div connectors only) */
 export function AnimSplitTokens() {
@@ -97,7 +98,7 @@ export function AnimProblemBars() {
       </div>
       <div className="flex flex-1 flex-col items-center gap-2">
         <span className="w-full text-left font-mono text-[10px] uppercase tracking-widest text-accent">
-          xstream
+          {APP_NAME}
         </span>
         <div className="flex h-40 w-full items-center justify-center rounded-2xl border border-accent/25 bg-accent/[0.05] p-4">
           <motion.div
