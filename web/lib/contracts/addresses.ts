@@ -201,3 +201,9 @@ export function getAssetBySymbol(chainId: number, symbol: string) {
   const cfg = chainId === 763373 ? PROD_INK_SEPOLIA : PROD_ETH_SEPOLIA;
   return cfg.assets.find((a) => a.symbol === symbol) ?? null;
 }
+
+export function getAssetByDxToken(chainId: number, dxToken: string) {
+  const cfg = chainId === 763373 ? PROD_INK_SEPOLIA : PROD_ETH_SEPOLIA;
+  const lower = dxToken.toLowerCase();
+  return cfg.assets.find((a) => a.dxToken.toLowerCase() === lower) ?? null;
+}

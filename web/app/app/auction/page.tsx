@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,19 +12,27 @@ import {
   Users,
   ArrowUpRight,
   DollarSign,
+  Loader2,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
-  mockAuctions,
   xdTokens,
   DIVIDEND_APY,
   type AuctionListing,
   type AuctionBid,
 } from "@/lib/auction-data";
+import { useEscrow, type OnChainListing } from "@/lib/contracts/useEscrow";
+import { xStockAssets } from "@/lib/market-data";
+import {
+  PROD_INK_SEPOLIA,
+  PROD_ETH_SEPOLIA,
+  getAssetByDxToken,
+} from "@/lib/contracts/addresses";
 
 // ---- Helpers ----
 
@@ -84,15 +92,84 @@ function TokenLogo({
 
 // ---- List New Auction Panel ----
 
-function ListAuctionPanel({ onClose }: { onClose: () => void }) {
+function ListAuctionPanel({
+  onClose,
+  onSuccess,
+  chainId,
+}: {
+  onClose: () => void;
+  onSuccess: () => void;
+  chainId: number;
+}) {
   const [token, setToken] = useState("");
   const [amount, setAmount] = useState("");
   const [quarters, setQuarters] = useState("");
   const [startingPrice, setStartingPrice] = useState("");
   const [showTokenMenu, setShowTokenMenu] = useState(false);
   const clean = (v: string) => v.replace(/[^0-9.]/g, "");
+  const { openAuction, isLoading, error } = useEscrow();
+  const { authenticated } = usePrivy();
 
   const selectedToken = xdTokens.find((t) => t.ticker === token);
+
+  // Resolve the on-chain dxToken address from the selected symbol
+  const assets = chainId === 763373 ? PROD_INK_SEPOLIA.assets : PROD_ETH_SEPOLIA.assets;
+  const onChainAsset = selectedToken
+    ? assets.find((a) => a.symbol === selectedToken.symbol)
+    : null;
+
+  // Fetch dxToken balance
+  const [dxBalance, setDxBalance] = useState<string | null>(null);
+  const { wallets } = useWallets();
+
+  useEffect(() => {
+    if (!onChainAsset || !authenticated || wallets.length === 0) {
+      setDxBalance(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const wallet = wallets[0];
+        const provider = await wallet.getEthereumProvider();
+        const { createPublicClient, http, formatUnits } = await import("viem");
+        const chain = chainId === 763373
+          ? (await import("viem/chains")).inkSepolia
+          : (await import("viem/chains")).sepolia;
+        const client = createPublicClient({ chain, transport: http() });
+        const bal = await client.readContract({
+          address: onChainAsset.dxToken as `0x${string}`,
+          abi: [{ type: "function", name: "balanceOf", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }], stateMutability: "view" }],
+          functionName: "balanceOf",
+          args: [wallet.address as `0x${string}`],
+        }) as bigint;
+        if (!cancelled) setDxBalance(formatUnits(bal, 18));
+      } catch {
+        if (!cancelled) setDxBalance("0");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [onChainAsset, authenticated, wallets, chainId]);
+
+  const QUARTER_SECS = 90 * 24 * 60 * 60; // ~90 days
+  const AUCTION_DURATION = 7 * 24 * 60 * 60; // 7 day auction
+
+  const handleList = async () => {
+    if (!onChainAsset || !amount || !quarters || !startingPrice) return;
+    try {
+      await openAuction(
+        onChainAsset.dxToken,
+        amount,
+        startingPrice,
+        AUCTION_DURATION,
+        parseInt(quarters) * QUARTER_SECS
+      );
+      onSuccess();
+      onClose();
+    } catch {
+      // error set in hook
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -190,7 +267,9 @@ function ListAuctionPanel({ onClose }: { onClose: () => void }) {
           />
           {selectedToken && (
             <p className="text-sm text-muted-foreground mt-3">
-              Balance: -- {selectedToken.ticker}
+              Balance: {dxBalance !== null
+                ? parseFloat(dxBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+                : "--"} {selectedToken.ticker}
             </p>
           )}
         </div>
@@ -262,13 +341,21 @@ function ListAuctionPanel({ onClose }: { onClose: () => void }) {
         )}
       </div>
 
-      <div className="p-5 border-t border-border/50">
+      <div className="p-5 border-t border-border/50 space-y-2">
+        {error && (
+          <p className="text-xs text-red-500 text-center">{error}</p>
+        )}
         <Button
           className="w-full h-14 rounded-2xl bg-primary text-lg font-semibold text-primary-foreground hover:bg-primary/80 disabled:opacity-30 shadow-lg shadow-primary/10"
-          disabled={!token || !amount || !quarters || !startingPrice}
+          disabled={!token || !amount || !quarters || !startingPrice || isLoading || !authenticated}
+          onClick={handleList}
         >
-          <Plus className="size-5 mr-2.5" />
-          List for Auction
+          {isLoading ? (
+            <Loader2 className="size-5 mr-2.5 animate-spin" />
+          ) : (
+            <Plus className="size-5 mr-2.5" />
+          )}
+          {isLoading ? "Listing..." : "List for Auction"}
         </Button>
       </div>
     </div>
@@ -280,12 +367,61 @@ function ListAuctionPanel({ onClose }: { onClose: () => void }) {
 function AuctionDetailPanel({
   auction,
   onClose,
+  onChainListing,
+  onSuccess,
 }: {
   auction: AuctionListing;
   onClose: () => void;
+  onChainListing?: OnChainListing;
+  onSuccess: () => void;
 }) {
   const [bidAmount, setBidAmount] = useState("");
   const clean = (v: string) => v.replace(/[^0-9.]/g, "");
+  const { placeBid, fetchBids, isLoading, error } = useEscrow();
+  const { authenticated } = usePrivy();
+
+  // Fetch real bid history from event logs
+  const [liveBids, setLiveBids] = useState<AuctionBid[]>([]);
+  const [bidsLoading, setBidsLoading] = useState(false);
+
+  const loadBids = useCallback(async () => {
+    if (!onChainListing) return;
+    setBidsLoading(true);
+    try {
+      const rawBids = await fetchBids(onChainListing.listingId);
+      const mapped: AuctionBid[] = rawBids.map((b, i) => ({
+        id: `bid-${onChainListing.listingId}-${i}`,
+        bidder: b.bidder,
+        amount: parseFloat(b.amount),
+        timestamp: Date.now() - (rawBids.length - i) * 60000, // approximate ordering
+      }));
+      // Sort highest first
+      mapped.sort((a, b) => b.amount - a.amount);
+      setLiveBids(mapped);
+    } catch (err) {
+      console.error("[auction] failed to fetch bids:", err);
+    } finally {
+      setBidsLoading(false);
+    }
+  }, [onChainListing, fetchBids]);
+
+  useEffect(() => {
+    loadBids();
+  }, [loadBids]);
+
+  const displayBids = liveBids.length > 0 ? liveBids : auction.bids;
+
+  const handleBid = async () => {
+    if (!bidAmount || !onChainListing) return;
+    try {
+      await placeBid(onChainListing.listingId, bidAmount);
+      setBidAmount("");
+      onSuccess();
+      loadBids(); // refresh bids after placing
+    } catch {
+      // error set in hook
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -353,7 +489,7 @@ function AuctionDetailPanel({
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Users className="size-4" />
-            <span>{auction.bids.length} bids</span>
+            <span>{displayBids.length} bids</span>
           </div>
         </div>
 
@@ -390,22 +526,35 @@ function AuctionDetailPanel({
           )}
         </div>
 
+        {error && (
+          <p className="text-xs text-red-500 text-center">{error}</p>
+        )}
+
         {/* Bid CTA */}
         <Button
           className="w-full h-14 rounded-2xl bg-primary text-lg font-semibold text-primary-foreground hover:bg-primary/80 disabled:opacity-30 shadow-lg shadow-primary/10"
-          disabled={!bidAmount}
+          disabled={!bidAmount || isLoading || !authenticated || !onChainListing}
+          onClick={handleBid}
         >
-          <Gavel className="size-5 mr-2.5" />
-          Place Bid
+          {isLoading ? (
+            <Loader2 className="size-5 mr-2.5 animate-spin" />
+          ) : (
+            <Gavel className="size-5 mr-2.5" />
+          )}
+          {isLoading ? "Bidding..." : "Place Bid"}
         </Button>
 
         {/* Bid list */}
         <div className="pt-2">
           <h3 className="text-sm font-semibold text-foreground mb-3 px-1">
-            All Bids ({auction.bids.length})
+            All Bids ({displayBids.length})
+            {bidsLoading && <Loader2 className="inline size-3 ml-2 animate-spin" />}
           </h3>
           <div className="space-y-2">
-            {auction.bids.map((bid, i) => (
+            {displayBids.length === 0 && !bidsLoading && (
+              <p className="text-sm text-muted-foreground text-center py-4">No bids yet</p>
+            )}
+            {displayBids.map((bid, i) => (
               <BidRow key={bid.id} bid={bid} rank={i + 1} isTop={i === 0} />
             ))}
           </div>
@@ -598,6 +747,38 @@ export default function AuctionPage() {
   );
 }
 
+function chainIdFromWallet(wallet: { chainId: string }): number {
+  const raw = wallet.chainId;
+  return parseInt(raw.includes(":") ? raw.split(":")[1] : raw);
+}
+
+function onChainToAuctionListing(
+  l: OnChainListing,
+  chainId: number
+): AuctionListing {
+  const asset = getAssetByDxToken(chainId, l.dxToken);
+  const uiAsset = asset
+    ? xStockAssets.find((a) => a.symbol === asset.symbol)
+    : null;
+  const symbol = asset?.symbol ?? "???";
+  return {
+    id: `chain-${l.listingId}`,
+    seller: l.seller,
+    token: `xd${symbol}`,
+    symbol,
+    tokenAmount: parseFloat(l.amount),
+    quarters: Math.max(1, Math.round(l.leaseDuration / (90 * 86400))),
+    startingPrice: parseFloat(l.basePrice),
+    highestBid: parseFloat(l.highestBid),
+    bids: [], // on-chain listings don't store full bid history
+    createdAt: (l.auctionEnd - 7 * 86400) * 1000, // estimate
+    endsAt: l.auctionEnd * 1000,
+    logo: uiAsset?.logo ?? "",
+    color: uiAsset?.color ?? "#888",
+    dividendApy: DIVIDEND_APY[symbol] ?? 0,
+  };
+}
+
 function AuctionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -605,21 +786,58 @@ function AuctionPageInner() {
   const isCreating = searchParams.get("new") === "1";
 
   const [search, setSearch] = useState("");
+  const [onChainListings, setOnChainListings] = useState<OnChainListing[]>([]);
+  const [loadingListings, setLoadingListings] = useState(false);
+  const { fetchListings } = useEscrow();
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const hasWallet = authenticated && wallets.length > 0;
+  const chainId = hasWallet ? chainIdFromWallet(wallets[0]) : 11155111;
+
+  const refreshListings = useCallback(async () => {
+    if (!hasWallet) return;
+    setLoadingListings(true);
+    try {
+      const listings = await fetchListings();
+      setOnChainListings(listings);
+    } catch (err) {
+      console.error("[auction] failed to fetch listings:", err);
+    } finally {
+      setLoadingListings(false);
+    }
+  }, [hasWallet, fetchListings]);
+
+  useEffect(() => {
+    refreshListings();
+  }, [refreshListings]);
+
+  // Convert on-chain listings to UI format, only show open auctions
+  const liveAuctions = useMemo(() => {
+    return onChainListings
+      .filter((l) => l.status === 1) // OpenAuction
+      .map((l) => onChainToAuctionListing(l, chainId));
+  }, [onChainListings, chainId]);
 
   const selectedAuction = useMemo(
-    () => mockAuctions.find((a) => a.id === selectedId) ?? null,
-    [selectedId]
+    () => liveAuctions.find((a) => a.id === selectedId) ?? null,
+    [selectedId, liveAuctions]
   );
 
+  const selectedOnChain = useMemo(() => {
+    if (!selectedId?.startsWith("chain-")) return undefined;
+    const id = parseInt(selectedId.replace("chain-", ""));
+    return onChainListings.find((l) => l.listingId === id);
+  }, [selectedId, onChainListings]);
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return mockAuctions;
+    if (!search.trim()) return liveAuctions;
     const q = search.toLowerCase();
-    return mockAuctions.filter(
+    return liveAuctions.filter(
       (a) =>
         a.token.toLowerCase().includes(q) ||
         a.symbol.toLowerCase().includes(q)
     );
-  }, [search]);
+  }, [search, liveAuctions]);
 
   function openListing(id: string) {
     router.push(`/app/auction?id=${id}`, { scroll: false });
@@ -695,9 +913,14 @@ function AuctionPageInner() {
       </motion.div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
+      {loadingListings ? (
+        <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground text-sm">
+          <Loader2 className="size-4 animate-spin" />
+          Loading auctions...
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground text-sm">
-          No auctions found.
+          {hasWallet ? "No active auctions. Be the first to list!" : "Connect wallet to see auctions."}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -720,13 +943,22 @@ function AuctionPageInner() {
       {/* Detail slide panel */}
       <SlidePanel open={!!selectedAuction} onClose={closePanel}>
         {selectedAuction && (
-          <AuctionDetailPanel auction={selectedAuction} onClose={closePanel} />
+          <AuctionDetailPanel
+            auction={selectedAuction}
+            onClose={closePanel}
+            onChainListing={selectedOnChain}
+            onSuccess={refreshListings}
+          />
         )}
       </SlidePanel>
 
       {/* Create listing slide panel */}
       <SlidePanel open={isCreating} onClose={closePanel}>
-        <ListAuctionPanel onClose={closePanel} />
+        <ListAuctionPanel
+          onClose={closePanel}
+          onSuccess={refreshListings}
+          chainId={chainId}
+        />
       </SlidePanel>
     </div>
   );

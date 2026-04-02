@@ -1,0 +1,166 @@
+{
+  "abi": [
+    {
+      "type": "function",
+      "name": "openAuction",
+      "inputs": [
+        { "name": "dxToken", "type": "address" },
+        { "name": "amount", "type": "uint256" },
+        { "name": "basePrice", "type": "uint256" },
+        { "name": "auctionDuration", "type": "uint256" },
+        { "name": "leaseDuration", "type": "uint256" }
+      ],
+      "outputs": [{ "name": "listingId", "type": "uint256" }],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "placeBid",
+      "inputs": [
+        { "name": "listingId", "type": "uint256" },
+        { "name": "amount", "type": "uint256" }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "finalizeAuction",
+      "inputs": [{ "name": "listingId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "cancelAuction",
+      "inputs": [{ "name": "listingId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "withdrawRefund",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "claimAndDistribute",
+      "inputs": [{ "name": "listingId", "type": "uint256" }],
+      "outputs": [{ "name": "claimed", "type": "uint256" }],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "reclaimDx",
+      "inputs": [{ "name": "listingId", "type": "uint256" }],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getListing",
+      "inputs": [{ "name": "listingId", "type": "uint256" }],
+      "outputs": [
+        {
+          "name": "",
+          "type": "tuple",
+          "components": [
+            { "name": "seller", "type": "address" },
+            { "name": "dxToken", "type": "address" },
+            { "name": "xStock", "type": "address" },
+            { "name": "amount", "type": "uint256" },
+            { "name": "basePrice", "type": "uint256" },
+            { "name": "auctionEnd", "type": "uint64" },
+            { "name": "leaseDuration", "type": "uint64" },
+            { "name": "leaseStart", "type": "uint64" },
+            { "name": "leaseEnd", "type": "uint64" },
+            { "name": "activeLessee", "type": "address" },
+            { "name": "highestBidder", "type": "address" },
+            { "name": "highestBid", "type": "uint256" },
+            { "name": "status", "type": "uint8" }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "nextListingId",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "refundableBalance",
+      "inputs": [{ "name": "", "type": "address" }],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "minBidIncrement",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "usdc",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "vault",
+      "inputs": [],
+      "outputs": [{ "name": "", "type": "address" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "activeListingByDxToken",
+      "inputs": [{ "name": "", "type": "address" }],
+      "outputs": [{ "name": "", "type": "uint256" }],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "AuctionOpened",
+      "inputs": [
+        { "name": "listingId", "type": "uint256", "indexed": true },
+        { "name": "seller", "type": "address", "indexed": true },
+        { "name": "dxToken", "type": "address", "indexed": true },
+        { "name": "xStock", "type": "address", "indexed": false },
+        { "name": "amount", "type": "uint256", "indexed": false },
+        { "name": "basePrice", "type": "uint256", "indexed": false },
+        { "name": "auctionEnd", "type": "uint256", "indexed": false },
+        { "name": "leaseDuration", "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "BidPlaced",
+      "inputs": [
+        { "name": "listingId", "type": "uint256", "indexed": true },
+        { "name": "bidder", "type": "address", "indexed": true },
+        { "name": "amount", "type": "uint256", "indexed": false }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "AuctionFinalized",
+      "inputs": [
+        { "name": "listingId", "type": "uint256", "indexed": true },
+        { "name": "seller", "type": "address", "indexed": true },
+        { "name": "winner", "type": "address", "indexed": true },
+        { "name": "winningBid", "type": "uint256", "indexed": false },
+        { "name": "leaseStart", "type": "uint256", "indexed": false },
+        { "name": "leaseEnd", "type": "uint256", "indexed": false }
+      ]
+    }
+  ]
+}

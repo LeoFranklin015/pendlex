@@ -46,7 +46,7 @@ async function ensureApproval(
       functionName: "approve",
       args: [spender, amount],
       account,
-      gas: 100_000n,
+      gas: BigInt(100000),
     });
     await publicClient.waitForTransactionReceipt({ hash });
   }
@@ -112,7 +112,7 @@ export function useVault() {
           functionName: "deposit",
           args: [asset.xStock, rawAmount],
           account,
-          gas: 500_000n,
+          gas: BigInt(500000),
         });
 
         setTxHash(hash);
@@ -166,7 +166,7 @@ export function useVault() {
           functionName: "withdraw",
           args: [asset.xStock, rawAmount],
           account,
-          gas: 500_000n,
+          gas: BigInt(500000),
         });
 
         setTxHash(hash);
@@ -200,7 +200,7 @@ export function useVault() {
           functionName: "claimDividend",
           args: [asset.xStock],
           account,
-          gas: 300_000n,
+          gas: BigInt(300000),
         });
 
         setTxHash(hash);
