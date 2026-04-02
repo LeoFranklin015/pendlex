@@ -73,6 +73,7 @@ export function useExchange() {
         value: fee,
         account,
         chain,
+        gas: BigInt(500_000),
       });
 
       const receipt = await pubClient.waitForTransactionReceipt({ hash });
@@ -136,6 +137,7 @@ export function useExchange() {
         value: fee,
         account,
         chain,
+        gas: BigInt(500_000),
       });
 
       const receipt = await pubClient.waitForTransactionReceipt({ hash });
@@ -187,6 +189,7 @@ export function useExchange() {
         value: fee,
         account,
         chain,
+        gas: BigInt(500_000),
       });
 
       return pubClient.waitForTransactionReceipt({ hash });
@@ -222,6 +225,7 @@ export function useExchange() {
         value: fee,
         account,
         chain,
+        gas: BigInt(500_000),
       });
 
       return pubClient.waitForTransactionReceipt({ hash });

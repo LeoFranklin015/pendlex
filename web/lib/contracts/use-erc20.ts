@@ -46,6 +46,7 @@ export async function ensureApproval(
       args: [spender, amount],
       account,
       chain: walletClient.chain,
+      gas: BigInt(100_000),
     });
     await publicClient.waitForTransactionReceipt({ hash });
   }

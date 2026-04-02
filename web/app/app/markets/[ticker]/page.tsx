@@ -37,6 +37,7 @@ import { useTxFlow } from "@/lib/contracts/use-tx-flow";
 import { useErc20Balance } from "@/lib/contracts/use-erc20";
 import { useContractMode } from "@/lib/contract-mode-context";
 import { getPublicClient } from "@/lib/contracts/client";
+import { sepolia } from "viem/chains";
 
 // ---- Helpers ----
 
@@ -483,9 +484,11 @@ function ExpertDetail({ asset }: { asset: Asset }) {
   const cfg = exchange.cfg;
   const publicClient = exchange.publicClient ?? getPublicClient();
 
+  // Always check prod Eth Sepolia MarketKeeper for market status
+  const prodSepoliaClient = getPublicClient(sepolia);
   const { isOpen: marketOpen, loading: marketLoading } = useMarketStatus(
-    publicClient,
-    cfg?.marketKeeper as `0x${string}` | undefined,
+    prodSepoliaClient,
+    "0xF382a19D4F3A8aD4288eE55CA363f47E91ceD563",
   );
 
   const {
