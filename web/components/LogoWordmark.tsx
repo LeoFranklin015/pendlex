@@ -50,7 +50,7 @@ export function LogoWordmark({
       />
       <span
         className={cn(
-          "font-medium tracking-tight text-foreground",
+          "font-[family-name:var(--font-syne)] font-bold tracking-tight text-foreground",
           textClassName
         )}
       >
