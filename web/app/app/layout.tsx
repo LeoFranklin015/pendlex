@@ -18,6 +18,8 @@ import {
   Wallet,
   ChevronDown,
   Droplets,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -201,11 +203,23 @@ function WalletPanel({
   selectedNetwork: Network;
   onNetworkChange: (n: Network) => void;
 }) {
+  const [copied, setCopied] = useState(false);
   const faucetUrls: Record<string, string> = {
     "ink-sepolia": "https://inkonchain.com/en/faucet",
     "sepolia": "https://www.alchemy.com/faucets/ethereum-sepolia",
   };
   const faucetUrl = faucetUrls[selectedNetwork.id];
+
+  async function copyWalletAddress() {
+    if (!walletAddress) return;
+    try {
+      await navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard may be unavailable (e.g. permission denied)
+    }
+  }
 
   return (
     <div className="mx-3 rounded-xl bg-white border border-black/[0.05] overflow-hidden">
@@ -251,16 +265,28 @@ function WalletPanel({
       <div className="px-3 py-2.5 space-y-2">
         {authenticated && walletAddress ? (
           <>
-            <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={copyWalletAddress}
+              title="Copy address"
+              aria-label="Copy wallet address"
+              className="flex items-center gap-2 w-full min-w-0 rounded-lg px-1 -mx-1 py-1 text-left hover:bg-black/[0.04] transition-colors group"
+            >
               <div className="size-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <Wallet className="size-3 text-primary" />
-
               </div>
-              <span className="font-mono text-xs text-foreground">
-                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+              <span className="flex-1 min-w-0 font-mono text-xs text-foreground truncate">
+                {copied
+                  ? "Copied"
+                  : `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`}
               </span>
-              <span className="ml-auto flex size-1.5 rounded-full bg-green-500" />
-            </div>
+              {copied ? (
+                <Check className="size-3.5 shrink-0 text-green-600" aria-hidden />
+              ) : (
+                <Copy className="size-3.5 shrink-0 text-muted-foreground opacity-70 group-hover:opacity-100" aria-hidden />
+              )}
+              <span className="flex size-1.5 shrink-0 rounded-full bg-green-500" title="Connected" />
+            </button>
             <button
               onClick={logout}
               className="w-full text-center text-[11px] text-muted-foreground hover:text-foreground transition-colors py-0.5"
