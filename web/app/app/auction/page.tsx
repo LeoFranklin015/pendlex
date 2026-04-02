@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -33,6 +33,9 @@ import {
   PROD_ETH_SEPOLIA,
   getAssetByDxToken,
 } from "@/lib/contracts/addresses";
+import { createPublicClient, http, formatUnits } from "viem";
+import { inkSepolia, sepolia } from "viem/chains";
+import { getRpcUrl } from "@/lib/contracts/client";
 
 // ---- Helpers ----
 
@@ -131,12 +134,8 @@ function ListAuctionPanel({
     (async () => {
       try {
         const wallet = wallets[0];
-        const provider = await wallet.getEthereumProvider();
-        const { createPublicClient, http, formatUnits } = await import("viem");
-        const chain = chainId === 763373
-          ? (await import("viem/chains")).inkSepolia
-          : (await import("viem/chains")).sepolia;
-        const client = createPublicClient({ chain, transport: http() });
+        const chain = chainId === 763373 ? inkSepolia : sepolia;
+        const client = createPublicClient({ chain, transport: http(getRpcUrl(chainId)) });
         const bal = await client.readContract({
           address: onChainAsset.dxToken as `0x${string}`,
           abi: [{ type: "function", name: "balanceOf", inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }], stateMutability: "view" }],
@@ -794,18 +793,22 @@ function AuctionPageInner() {
   const hasWallet = authenticated && wallets.length > 0;
   const chainId = hasWallet ? chainIdFromWallet(wallets[0]) : 11155111;
 
+  const [refreshKey, setRefreshKey] = useState(0);
+  const fetchListingsRef = useRef(fetchListings);
+  fetchListingsRef.current = fetchListings;
+
   const refreshListings = useCallback(async () => {
     if (!hasWallet) return;
     setLoadingListings(true);
     try {
-      const listings = await fetchListings();
+      const listings = await fetchListingsRef.current();
       setOnChainListings(listings);
     } catch (err) {
       console.error("[auction] failed to fetch listings:", err);
     } finally {
       setLoadingListings(false);
     }
-  }, [hasWallet, fetchListings]);
+  }, [hasWallet, refreshKey]);
 
   useEffect(() => {
     refreshListings();
@@ -947,7 +950,7 @@ function AuctionPageInner() {
             auction={selectedAuction}
             onClose={closePanel}
             onChainListing={selectedOnChain}
-            onSuccess={refreshListings}
+            onSuccess={() => setRefreshKey((k) => k + 1)}
           />
         )}
       </SlidePanel>
@@ -956,7 +959,7 @@ function AuctionPageInner() {
       <SlidePanel open={isCreating} onClose={closePanel}>
         <ListAuctionPanel
           onClose={closePanel}
-          onSuccess={refreshListings}
+          onSuccess={() => setRefreshKey((k) => k + 1)}
           chainId={chainId}
         />
       </SlidePanel>

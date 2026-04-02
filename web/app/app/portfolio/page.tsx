@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Card,
@@ -17,6 +18,7 @@ import {
   Gift,
   Wallet,
   CalendarClock,
+  Loader2,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -28,6 +30,22 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useAppMode } from "@/lib/mode-context";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
+import { useVault } from "@/lib/contracts/useVault";
+import { usePythPrices } from "@/lib/use-pyth-prices";
+import { xStockAssets } from "@/lib/market-data";
+import {
+  PROD_INK_SEPOLIA,
+  PROD_ETH_SEPOLIA,
+} from "@/lib/contracts/addresses";
+import {
+  createPublicClient,
+  http,
+  formatUnits,
+} from "viem";
+import { inkSepolia, sepolia } from "viem/chains";
+import { ERC20_ABI } from "@/lib/contracts/abis";
+import { getRpcUrl } from "@/lib/contracts/client";
 
 // Mock portfolio value over time
 const portfolioData = Array.from({ length: 60 }, (_, i) => {
@@ -39,41 +57,6 @@ const portfolioData = Array.from({ length: 60 }, (_, i) => {
     value: Math.round(base + growth + noise),
   };
 });
-
-const tokenBalances = [
-  {
-    symbol: "xSPY",
-    name: "Wrapped SPY ETF",
-    balance: "250.00",
-    value: "$12,420.00",
-    change: "+2.4%",
-    positive: true,
-  },
-  {
-    symbol: "xdSPY",
-    name: "Income Token",
-    balance: "625.00",
-    value: "$800.00",
-    change: "+0.8%",
-    positive: true,
-  },
-  {
-    symbol: "xpSPY",
-    name: "Price Token",
-    balance: "625.00",
-    value: "$32,812.50",
-    change: "-1.2%",
-    positive: false,
-  },
-  {
-    symbol: "USDC",
-    name: "USD Coin",
-    balance: "5,000.00",
-    value: "$5,000.00",
-    change: "0.0%",
-    positive: true,
-  },
-];
 
 const activePositions = [
   {
@@ -114,22 +97,232 @@ const activePositions = [
   },
 ];
 
-const dividendHistory = [
-  { date: "Mar 15, 2026", amount: "$14.63", shares: "625 xdSPY" },
-  { date: "Feb 15, 2026", amount: "$13.98", shares: "625 xdSPY" },
-  { date: "Jan 15, 2026", amount: "$14.12", shares: "600 xdSPY" },
-  { date: "Dec 15, 2025", amount: "$15.20", shares: "600 xdSPY" },
-  { date: "Nov 15, 2025", amount: "$13.45", shares: "500 xdSPY" },
-];
-
 const fadeUp = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
 };
 
+function formatUsd(n: number): string {
+  return "$" + n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function fmtBal(v: string): string {
+  const n = parseFloat(v);
+  if (n === 0) return "0.00";
+  return n.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  });
+}
+
+// -- Types --
+
+interface TokenBalance {
+  symbol: string;
+  name: string;
+  balance: string;
+  valueUsd: number;
+}
+
+interface AssetDividend {
+  symbol: string;
+  pending: string; // raw token amount
+  pendingUsd: number;
+}
+
+// -- Hook: fetch all balances across all assets --
+
+function getChainId(wallet: { chainId: string }): number {
+  const raw = wallet.chainId;
+  return parseInt(raw.includes(":") ? raw.split(":")[1] : raw);
+}
+
+// Raw balance data fetched once from chain (no prices)
+interface RawTokenBalance {
+  symbol: string;
+  name: string;
+  balance: string;
+  underlyingSymbol: string; // for price lookup
+}
+
+interface RawDividend {
+  symbol: string;
+  pending: string;
+}
+
+function usePortfolioData() {
+  const { authenticated } = usePrivy();
+  const { wallets } = useWallets();
+  const { getPendingDividend, claimDividend, isLoading: claimLoading } = useVault();
+  const liveAssets = usePythPrices();
+
+  const hasWallet = authenticated && wallets.length > 0;
+  const chainId = hasWallet ? getChainId(wallets[0]) : 11155111;
+  const assets = chainId === 763373 ? PROD_INK_SEPOLIA.assets : PROD_ETH_SEPOLIA.assets;
+
+  // Raw on-chain data (fetched once, not on every price tick)
+  const [rawBalances, setRawBalances] = useState<RawTokenBalance[]>([]);
+  const [usdcBalance, setUsdcBalance] = useState("0");
+  const [rawDividends, setRawDividends] = useState<RawDividend[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    if (!hasWallet) return;
+    setLoading(true);
+    const wallet = wallets[0];
+    const chain = chainId === 763373 ? inkSepolia : sepolia;
+    const client = createPublicClient({ chain, transport: http(getRpcUrl(chainId)) });
+    const account = wallet.address as `0x${string}`;
+    const cfg = chainId === 763373 ? PROD_INK_SEPOLIA : PROD_ETH_SEPOLIA;
+
+    const balances: RawTokenBalance[] = [];
+    const divs: RawDividend[] = [];
+
+    // Fetch USDC balance
+    try {
+      const usdcBal = await client.readContract({
+        address: cfg.usdc as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [account],
+      }) as bigint;
+      setUsdcBalance(formatUnits(usdcBal, 6));
+    } catch {
+      setUsdcBalance("0");
+    }
+
+    // Fetch balances for each asset
+    for (const asset of assets) {
+      const uiAsset = xStockAssets.find((a) => a.symbol === asset.symbol);
+
+      try {
+        const [xBal, pxBal, dxBal] = await Promise.all([
+          client.readContract({ address: asset.xStock as `0x${string}`, abi: ERC20_ABI, functionName: "balanceOf", args: [account] }) as Promise<bigint>,
+          client.readContract({ address: asset.pxToken as `0x${string}`, abi: ERC20_ABI, functionName: "balanceOf", args: [account] }) as Promise<bigint>,
+          client.readContract({ address: asset.dxToken as `0x${string}`, abi: ERC20_ABI, functionName: "balanceOf", args: [account] }) as Promise<bigint>,
+        ]);
+
+        const xNum = parseFloat(formatUnits(xBal, 18));
+        const pxNum = parseFloat(formatUnits(pxBal, 18));
+        const dxNum = parseFloat(formatUnits(dxBal, 18));
+
+        if (xNum > 0) {
+          balances.push({
+            symbol: `x${asset.symbol}`,
+            name: uiAsset?.name ?? asset.symbol,
+            balance: formatUnits(xBal, 18),
+            underlyingSymbol: asset.symbol,
+          });
+        }
+        if (dxNum > 0) {
+          balances.push({
+            symbol: `xd${asset.symbol}`,
+            name: `${asset.symbol} Income Token`,
+            balance: formatUnits(dxBal, 18),
+            underlyingSymbol: asset.symbol,
+          });
+        }
+        if (pxNum > 0) {
+          balances.push({
+            symbol: `xp${asset.symbol}`,
+            name: `${asset.symbol} Price Token`,
+            balance: formatUnits(pxBal, 18),
+            underlyingSymbol: asset.symbol,
+          });
+        }
+      } catch {
+        // skip assets that fail
+      }
+
+      // Fetch pending dividend
+      try {
+        const pending = await getPendingDividend(asset.symbol);
+        const pendingNum = parseFloat(pending);
+        if (pendingNum > 0) {
+          divs.push({ symbol: asset.symbol, pending });
+        }
+      } catch {
+        // pendingDividend reverts if no position
+      }
+    }
+
+    setRawBalances(balances);
+    setRawDividends(divs);
+    setLoading(false);
+  // Intentionally exclude liveAssets -- prices are applied in render, not in fetch
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasWallet, wallets, chainId, getPendingDividend]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  // Derive USD values from raw balances + live prices (recomputed on every price tick without refetching)
+  const priceOf = (sym: string) => liveAssets.find((a) => a.symbol === sym)?.price ?? 0;
+
+  const tokenBalances: TokenBalance[] = rawBalances.map((b) => ({
+    symbol: b.symbol,
+    name: b.name,
+    balance: b.balance,
+    valueUsd: parseFloat(b.balance) * priceOf(b.underlyingSymbol),
+  }));
+
+  const dividends: AssetDividend[] = rawDividends.map((d) => ({
+    symbol: d.symbol,
+    pending: d.pending,
+    pendingUsd: parseFloat(d.pending) * priceOf(d.symbol),
+  }));
+
+  const totalPendingTokens = dividends.reduce((acc, d) => acc + parseFloat(d.pending), 0);
+  const totalPendingUsd = dividends.reduce((acc, d) => acc + d.pendingUsd, 0);
+  const totalBalanceUsd = tokenBalances.reduce((acc, t) => acc + t.valueUsd, 0) + parseFloat(usdcBalance);
+
+  const handleClaimAll = async () => {
+    setClaimError(null);
+    for (const div of rawDividends) {
+      try {
+        await claimDividend(div.symbol);
+      } catch (err) {
+        setClaimError(err instanceof Error ? err.message : String(err));
+        break;
+      }
+    }
+    refresh();
+  };
+
+  return {
+    tokenBalances,
+    usdcBalance,
+    dividends,
+    totalPendingTokens,
+    totalPendingUsd,
+    totalBalanceUsd,
+    loading,
+    claimLoading,
+    claimError,
+    handleClaimAll,
+    refresh,
+    hasWallet,
+  };
+}
+
 function ExpertPortfolio() {
-  const totalValue = "$51,032.50";
-  const pendingDividends = "$8.22";
+  const {
+    tokenBalances,
+    usdcBalance,
+    dividends,
+    totalPendingUsd,
+    totalBalanceUsd,
+    loading,
+    claimLoading,
+    claimError,
+    handleClaimAll,
+    hasWallet,
+  } = usePortfolioData();
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
@@ -150,53 +343,79 @@ function ExpertPortfolio() {
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Wallet className="size-4 text-muted-foreground" />
                 Token Balances
+                {loading && <Loader2 className="size-3 animate-spin" />}
               </CardTitle>
               <span className="text-lg font-semibold tracking-tight">
-                {totalValue}
+                {formatUsd(totalBalanceUsd)}
               </span>
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {tokenBalances.map((token) => (
-                <motion.div
-                  key={token.symbol}
-                  whileHover={{ scale: 1.02 }}
-                  className="rounded-lg bg-muted/30 p-3 border border-border/50 hover:border-primary/20 transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Coins className="size-3.5 text-primary" />
+            {!hasWallet ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Connect wallet to view balances</p>
+            ) : tokenBalances.length === 0 && parseFloat(usdcBalance) === 0 && !loading ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No tokens found</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {tokenBalances.map((token) => (
+                  <motion.div
+                    key={token.symbol}
+                    whileHover={{ scale: 1.02 }}
+                    className="rounded-lg bg-muted/30 p-3 border border-border/50 hover:border-primary/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Coins className="size-3.5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{token.symbol}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {token.name}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{token.symbol}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {token.name}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Balance</p>
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Balance</p>
+                        <p className="text-sm font-medium font-mono">
+                          {fmtBal(token.balance)}
+                        </p>
+                      </div>
                       <p className="text-sm font-medium font-mono">
-                        {token.balance}
+                        {formatUsd(token.valueUsd)}
                       </p>
                     </div>
-                    <div className="text-right">
+                  </motion.div>
+                ))}
+                {parseFloat(usdcBalance) > 0 && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    className="rounded-lg bg-muted/30 p-3 border border-border/50 hover:border-primary/20 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Coins className="size-3.5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">USDC</p>
+                        <p className="text-[10px] text-muted-foreground">USD Coin</p>
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Balance</p>
+                        <p className="text-sm font-medium font-mono">
+                          {fmtBal(usdcBalance)}
+                        </p>
+                      </div>
                       <p className="text-sm font-medium font-mono">
-                        {token.value}
-                      </p>
-                      <p
-                        className={`text-[10px] font-medium ${token.positive ? "text-green-500" : "text-red-500"
-                          }`}
-                      >
-                        {token.change}
+                        {formatUsd(parseFloat(usdcBalance))}
                       </p>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -301,17 +520,11 @@ function ExpertPortfolio() {
                     <thead>
                       <tr className="text-xs text-muted-foreground border-b border-border/50">
                         <th className="text-left py-2 font-medium">Asset</th>
-                        <th className="text-left py-2 font-medium">
-                          Direction
-                        </th>
+                        <th className="text-left py-2 font-medium">Direction</th>
                         <th className="text-right py-2 font-medium">Size</th>
-                        <th className="text-right py-2 font-medium">
-                          Leverage
-                        </th>
+                        <th className="text-right py-2 font-medium">Leverage</th>
                         <th className="text-right py-2 font-medium">Entry</th>
-                        <th className="text-right py-2 font-medium">
-                          Current
-                        </th>
+                        <th className="text-right py-2 font-medium">Current</th>
                         <th className="text-right py-2 font-medium">P&L</th>
                       </tr>
                     </thead>
@@ -338,26 +551,15 @@ function ExpertPortfolio() {
                               {pos.direction}
                             </Badge>
                           </td>
-                          <td className="text-right py-2.5 font-mono">
-                            {pos.size}
-                          </td>
-                          <td className="text-right py-2.5 font-mono">
-                            {pos.leverage}
-                          </td>
-                          <td className="text-right py-2.5 font-mono">
-                            {pos.entry}
-                          </td>
-                          <td className="text-right py-2.5 font-mono">
-                            {pos.current}
-                          </td>
+                          <td className="text-right py-2.5 font-mono">{pos.size}</td>
+                          <td className="text-right py-2.5 font-mono">{pos.leverage}</td>
+                          <td className="text-right py-2.5 font-mono">{pos.entry}</td>
+                          <td className="text-right py-2.5 font-mono">{pos.current}</td>
                           <td
-                            className={`text-right py-2.5 font-mono font-medium ${pos.positive ? "text-green-500" : "text-red-500"
-                              }`}
+                            className={`text-right py-2.5 font-mono font-medium ${pos.positive ? "text-green-500" : "text-red-500"}`}
                           >
                             <div>{pos.pnl}</div>
-                            <div className="text-[10px]">
-                              {pos.pnlPercent}
-                            </div>
+                            <div className="text-[10px]">{pos.pnlPercent}</div>
                           </td>
                         </tr>
                       ))}
@@ -386,55 +588,46 @@ function ExpertPortfolio() {
                     Pending Dividends
                   </p>
                   <p className="text-2xl font-semibold text-primary font-mono tracking-tight">
-                    {pendingDividends}
+                    {formatUsd(totalPendingUsd)}
                   </p>
                 </div>
-                <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-medium">
-                  <Gift className="size-4 mr-1.5" />
-                  Claim {pendingDividends}
+
+                {dividends.length > 0 && (
+                  <div className="space-y-1.5">
+                    {dividends.map((d) => (
+                      <div key={d.symbol} className="flex items-center justify-between text-xs px-1">
+                        <span className="text-muted-foreground">xd{d.symbol}</span>
+                        <span className="font-mono font-medium">
+                          {fmtBal(d.pending)} tokens ({formatUsd(d.pendingUsd)})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {claimError && (
+                  <p className="text-xs text-red-500 text-center">{claimError}</p>
+                )}
+
+                <Button
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+                  disabled={dividends.length === 0 || claimLoading || !hasWallet}
+                  onClick={handleClaimAll}
+                >
+                  {claimLoading ? (
+                    <Loader2 className="size-4 mr-1.5 animate-spin" />
+                  ) : (
+                    <Gift className="size-4 mr-1.5" />
+                  )}
+                  {claimLoading
+                    ? "Claiming..."
+                    : dividends.length > 0
+                      ? `Claim ${formatUsd(totalPendingUsd)}`
+                      : "No dividends to claim"}
                 </Button>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <CalendarClock className="size-3" />
-                  <span>Next dividend: Apr 15, 2026</span>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Dividend history */}
-          <motion.div {...fadeUp} transition={{ delay: 0.25 }}>
-            <Card>
-              <CardHeader className="px-4 pt-4 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Dividend History
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 pt-0">
-                <div className="space-y-0">
-                  {dividendHistory.map((div, i) => (
-                    <div key={i}>
-                      {i > 0 && <Separator className="opacity-30" />}
-                      <div className="flex items-center justify-between py-2.5">
-                        <div>
-                          <p className="text-sm font-medium">{div.amount}</p>
-                          <p className="text-[10px] text-muted-foreground">
-                            {div.shares}
-                          </p>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {div.date}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 pt-3 border-t border-border/30 flex justify-between text-xs">
-                  <span className="text-muted-foreground">
-                    Total Earned (All Time)
-                  </span>
-                  <span className="font-medium font-mono text-primary">
-                    $71.38
-                  </span>
+                  <span>Dividends accrue when multiplier changes</span>
                 </div>
               </CardContent>
             </Card>
@@ -446,15 +639,18 @@ function ExpertPortfolio() {
 }
 
 function GrandmaPortfolio() {
-  const totalValue = "$51,032.50";
-  const pendingDividends = "$8.22";
-
-  const simpleBalances = [
-    { label: "Income Tokens", symbol: "xdSPY", value: "$800.00", balance: "625.00" },
-    { label: "Price Tokens", symbol: "xpSPY", value: "$32,812.50", balance: "625.00" },
-    { label: "Investments", symbol: "xSPY", value: "$12,420.00", balance: "250.00" },
-    { label: "Cash Balance", symbol: "USDC", value: "$5,000.00", balance: "5,000.00" },
-  ];
+  const {
+    tokenBalances,
+    usdcBalance,
+    dividends,
+    totalPendingUsd,
+    totalBalanceUsd,
+    loading,
+    claimLoading,
+    claimError,
+    handleClaimAll,
+    hasWallet,
+  } = usePortfolioData();
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl mx-auto">
@@ -472,34 +668,63 @@ function GrandmaPortfolio() {
         <Card className="border-primary/20">
           <CardContent className="p-6 text-center">
             <p className="text-sm text-muted-foreground mb-2">Total Value</p>
-            <p className="text-4xl font-semibold tracking-tight">{totalValue}</p>
+            <p className="text-4xl font-semibold tracking-tight">
+              {loading ? <Loader2 className="size-6 animate-spin mx-auto" /> : formatUsd(totalBalanceUsd)}
+            </p>
           </CardContent>
         </Card>
       </motion.div>
 
-      {/* Simple balance list */}
+      {/* Balance list */}
       <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
         <Card>
           <CardContent className="p-0">
-            {simpleBalances.map((item, i) => (
-              <div key={item.symbol}>
-                {i > 0 && <Separator className="opacity-30" />}
-                <div className="flex items-center justify-between px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Coins className="size-4 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{item.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {item.balance} {item.symbol}
-                      </p>
+            {!hasWallet ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Connect wallet to view balances</p>
+            ) : tokenBalances.length === 0 && parseFloat(usdcBalance) === 0 && !loading ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No tokens found</p>
+            ) : (
+              <>
+                {tokenBalances.map((item, i) => (
+                  <div key={item.symbol}>
+                    {i > 0 && <Separator className="opacity-30" />}
+                    <div className="flex items-center justify-between px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="size-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Coins className="size-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{item.symbol}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {fmtBal(item.balance)} tokens
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm font-semibold font-mono">{formatUsd(item.valueUsd)}</p>
                     </div>
                   </div>
-                  <p className="text-sm font-semibold font-mono">{item.value}</p>
-                </div>
-              </div>
-            ))}
+                ))}
+                {parseFloat(usdcBalance) > 0 && (
+                  <>
+                    {tokenBalances.length > 0 && <Separator className="opacity-30" />}
+                    <div className="flex items-center justify-between px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="size-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Coins className="size-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">USDC</p>
+                          <p className="text-xs text-muted-foreground">
+                            {fmtBal(usdcBalance)} tokens
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm font-semibold font-mono">{formatUsd(parseFloat(usdcBalance))}</p>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </CardContent>
         </Card>
       </motion.div>
@@ -512,15 +737,42 @@ function GrandmaPortfolio() {
             <div>
               <p className="text-sm text-muted-foreground">Earnings Ready to Collect</p>
               <p className="text-3xl font-semibold text-primary font-mono tracking-tight mt-1">
-                {pendingDividends}
+                {formatUsd(totalPendingUsd)}
               </p>
             </div>
-            <Button className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-medium">
-              <Gift className="size-4 mr-2" />
-              Collect Earnings
+
+            {dividends.length > 0 && (
+              <div className="space-y-1">
+                {dividends.map((d) => (
+                  <p key={d.symbol} className="text-xs text-muted-foreground">
+                    {fmtBal(d.pending)} xd{d.symbol} ({formatUsd(d.pendingUsd)})
+                  </p>
+                ))}
+              </div>
+            )}
+
+            {claimError && (
+              <p className="text-xs text-red-500">{claimError}</p>
+            )}
+
+            <Button
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+              disabled={dividends.length === 0 || claimLoading || !hasWallet}
+              onClick={handleClaimAll}
+            >
+              {claimLoading ? (
+                <Loader2 className="size-4 mr-2 animate-spin" />
+              ) : (
+                <Gift className="size-4 mr-2" />
+              )}
+              {claimLoading
+                ? "Claiming..."
+                : dividends.length > 0
+                  ? `Collect ${formatUsd(totalPendingUsd)}`
+                  : "No earnings yet"}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Next payment expected: Apr 15, 2026
+              Dividends accrue when the stock multiplier changes
             </p>
           </CardContent>
         </Card>
