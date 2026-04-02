@@ -271,3 +271,176 @@ export function AnimPhaseDots({ active = 3 }: { active?: number }) {
     </div>
   );
 }
+
+/** What's Unique: moat grid */
+export function AnimMoatGrid() {
+  const items = [
+    {
+      tag: "01",
+      label: "Yield tokenization for equities",
+      detail:
+        "First protocol to split tokenized stocks into yield and price legs on-chain.",
+    },
+    {
+      tag: "02",
+      label: "O(1) gas-efficient claims",
+      detail:
+        "Masterchef-style accumulator at 1e36 precision. No iteration over holders.",
+    },
+    {
+      tag: "03",
+      label: "Session-gated exchange",
+      detail:
+        "px trading opens and closes with NYSE. Forced daily settlement -- no overnight risk.",
+    },
+    {
+      tag: "04",
+      label: "Forward yield auction",
+      detail:
+        "dx lease escrow lets holders auction future dividend streams. Price discovery on yield.",
+    },
+  ];
+
+  return (
+    <motion.div
+      className="grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-2"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-15%" }}
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.1 } } }}
+    >
+      {items.map((item) => (
+        <motion.div
+          key={item.tag}
+          variants={{
+            hidden: { opacity: 0, y: 14 },
+            show: { opacity: 1, y: 0 },
+          }}
+          className="rounded-2xl border border-accent/20 bg-accent/[0.04] p-5"
+        >
+          <p className="font-mono text-[10px] text-accent">{item.tag}</p>
+          <p className="mt-2 text-sm font-medium text-foreground">
+            {item.label}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{item.detail}</p>
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+
+/** Viability: market size counter */
+export function AnimMarketSize() {
+  const raw = useMotionValue(0);
+  const spring = useSpring(raw, { stiffness: 60, damping: 20 });
+  const [display, setDisplay] = useState(0);
+
+  useMotionValueEvent(spring, "change", (v) => {
+    setDisplay(Math.round(v));
+  });
+
+  useEffect(() => {
+    raw.set(0);
+    const id = requestAnimationFrame(() => raw.set(500));
+    return () => cancelAnimationFrame(id);
+  }, [raw]);
+
+  return (
+    <div className="flex flex-col items-center gap-6">
+      <div className="text-center">
+        <span className="font-[family-name:var(--font-safira)] text-6xl tabular-nums text-accent md:text-8xl">
+          ${display}T+
+        </span>
+        <p className="mt-2 font-mono text-xs text-muted-foreground">
+          TradFi interest-rate derivatives (notional)
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Impact: ecosystem flywheel */
+export function AnimFlywheel() {
+  const steps = [
+    "xStock deposits",
+    "dx + px minted",
+    "Trading volume",
+    "Fee revenue",
+    "Higher dx yield",
+  ];
+
+  return (
+    <div className="relative mx-auto flex h-64 w-64 items-center justify-center sm:h-72 sm:w-72">
+      <motion.div
+        className="absolute h-48 w-48 rounded-full border border-dashed border-accent/30 sm:h-56 sm:w-56"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+      />
+      {steps.map((step, i) => {
+        const angle = (i / steps.length) * 2 * Math.PI - Math.PI / 2;
+        const r = 105;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        return (
+          <motion.div
+            key={step}
+            className="absolute w-24 rounded-lg border border-accent/25 bg-accent/[0.06] px-2 py-1.5 text-center font-mono text-[9px] text-foreground sm:text-[10px]"
+            style={{
+              left: `calc(50% + ${x}px - 3rem)`,
+              top: `calc(50% + ${y}px - 0.875rem)`,
+            }}
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.12 * i }}
+          >
+            {step}
+          </motion.div>
+        );
+      })}
+      <span className="relative z-10 font-mono text-[10px] text-muted-foreground">
+        flywheel
+      </span>
+    </div>
+  );
+}
+
+/** Solution: 3-step flow */
+export function AnimSolutionSteps() {
+  const steps = [
+    { n: "1", label: "Deposit xStock", sub: "into the vault" },
+    { n: "2", label: "Mint dx + px", sub: "yield + price tokens" },
+    { n: "3", label: "Trade each leg", sub: "on dedicated markets" },
+  ];
+
+  return (
+    <motion.div
+      className="flex w-full max-w-2xl items-center justify-center gap-2 sm:gap-4"
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-10%" }}
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12 } } }}
+    >
+      {steps.map((s) => (
+        <motion.div
+          key={s.n}
+          variants={{
+            hidden: { opacity: 0, y: 16 },
+            show: { opacity: 1, y: 0 },
+          }}
+          className="flex flex-1 flex-col items-center"
+        >
+          <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-accent/40 bg-accent/10 font-mono text-sm text-accent sm:h-16 sm:w-16">
+            {s.n}
+          </div>
+          <p className="mt-3 text-center text-sm font-medium text-foreground">
+            {s.label}
+          </p>
+          <p className="mt-0.5 text-center text-[10px] text-muted-foreground">
+            {s.sub}
+          </p>
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
