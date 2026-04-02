@@ -498,11 +498,13 @@ function ExpertDetail({ asset }: { asset: Asset }) {
     refreshPositions,
   } = usePositions(exchange.account ?? undefined, chainId, publicClient, cfg ?? null);
 
+  // Refresh positions on mount and every 60s (avoid RPC flooding)
   useEffect(() => {
     refreshPositions();
-    const id = setInterval(refreshPositions, 30_000);
+    const id = setInterval(refreshPositions, 60_000);
     return () => clearInterval(id);
-  }, [refreshPositions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exchange.account, chainId]);
 
   const { candles, loading: candlesLoading } = usePythCandles(
     asset.symbol,
