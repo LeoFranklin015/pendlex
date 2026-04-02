@@ -14,6 +14,7 @@ export interface Asset {
   change: number;
   changePercent: number;
   confidence: number;
+  apy: number;
 }
 
 // Pyth regular market hours feed IDs (Equity.US.XXX/USD)
@@ -22,7 +23,6 @@ export const PYTH_FEED_IDS = {
   GOOGL: "5a48c03e9b9cb337801073ed9d166817473697efff0d138874e0f6a33d6d5aa6",
   AAPL: "49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688",
   SPY: "19e09bb805456ada3979a7d1cbb4b6d63babc3a0f8e8a9509f68afa5c4c11cd5",
-  TBLL: "", // no Pyth feed available
 } as const;
 
 export const xStockAssets: Asset[] = [
@@ -39,6 +39,7 @@ export const xStockAssets: Asset[] = [
     change: 0,
     changePercent: 0,
     confidence: 0,
+    apy: 0,
   },
   {
     ticker: "GOOGLxt",
@@ -53,6 +54,7 @@ export const xStockAssets: Asset[] = [
     change: 0,
     changePercent: 0,
     confidence: 0,
+    apy: 0,
   },
   {
     ticker: "AAPLxt",
@@ -67,6 +69,7 @@ export const xStockAssets: Asset[] = [
     change: 0,
     changePercent: 0,
     confidence: 0,
+    apy: 0,
   },
   {
     ticker: "SPYxt",
@@ -81,20 +84,7 @@ export const xStockAssets: Asset[] = [
     change: 0,
     changePercent: 0,
     confidence: 0,
-  },
-  {
-    ticker: "TBLLxt",
-    name: "TBLL xStock",
-    symbol: "TBLL",
-    type: "ETF",
-    color: "#1a3c8a",
-    logo: "",
-    pythFeedId: "", // no Pyth feed
-    price: 0,
-    prevPrice: 0,
-    change: 0,
-    changePercent: 0,
-    confidence: 0,
+    apy: 0,
   },
 ];
 

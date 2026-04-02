@@ -23,6 +23,7 @@ import {
 import { type Asset } from "@/lib/market-data";
 import { usePythPrices } from "@/lib/use-pyth-prices";
 import { usePythSparklines } from "@/lib/use-pyth-sparklines";
+import { useStockApy } from "@/lib/use-apy";
 import { useAppMode } from "@/lib/mode-context";
 
 function useInView() {
@@ -208,7 +209,7 @@ function AllAssetsList({ assets }: { assets: Asset[] }) {
 
 // ---- Asset Card ----
 
-function AssetCard({ asset, sparkline }: { asset: Asset; sparkline?: { v: number }[] }) {
+function AssetCard({ asset, sparkline, apy }: { asset: Asset; sparkline?: { v: number }[]; apy?: number }) {
   const positive = asset.change >= 0;
   const loading = asset.price === 0;
   const { ref, seen } = useInView();
@@ -225,6 +226,11 @@ function AssetCard({ asset, sparkline }: { asset: Asset; sparkline?: { v: number
             <p className="text-sm font-medium text-foreground">{asset.ticker}</p>
             <p className="text-xs text-muted-foreground">{asset.name}</p>
           </div>
+          {apy !== undefined && (
+            <Badge className="ml-auto bg-foreground text-background text-[11px] font-semibold px-2 py-0.5">
+              {apy >= 0 ? "+" : ""}{(apy * 100).toFixed(2)}% APY
+            </Badge>
+          )}
         </div>
 
         <div className="mx-3 mb-3 rounded-lg overflow-hidden" style={{ backgroundColor: bgColor }}>
@@ -283,7 +289,7 @@ function AssetCard({ asset, sparkline }: { asset: Asset; sparkline?: { v: number
 
 // ---- Asset List Row ----
 
-function AssetRow({ asset, sparkline }: { asset: Asset; sparkline?: { v: number }[] }) {
+function AssetRow({ asset, sparkline, apy }: { asset: Asset; sparkline?: { v: number }[]; apy?: number }) {
   const positive = asset.change >= 0;
   const loading = asset.price === 0;
   const { ref, seen } = useInView();
@@ -299,6 +305,11 @@ function AssetRow({ asset, sparkline }: { asset: Asset; sparkline?: { v: number 
               <Badge variant="secondary" className="text-[10px]">
                 {asset.type}
               </Badge>
+              {apy !== undefined && (
+                <Badge className="bg-foreground text-background text-[10px] font-semibold px-1.5 py-0.5">
+                  {apy >= 0 ? "+" : ""}{(apy * 100).toFixed(2)}% APY
+                </Badge>
+              )}
             </div>
             <p className="text-xs text-muted-foreground truncate">{asset.name}</p>
           </div>
@@ -349,6 +360,7 @@ function AssetRow({ asset, sparkline }: { asset: Asset; sparkline?: { v: number 
 
 function GrandmaMarkets() {
   const assets = usePythPrices();
+  const apyMap = useStockApy();
   const loaded = assets.filter((a) => a.price > 0);
 
   return (
@@ -370,6 +382,7 @@ function GrandmaMarkets() {
         ) : (
           loaded.map((asset, i) => {
             const positive = asset.change >= 0;
+            const apy = apyMap[asset.ticker];
             return (
               <motion.div
                 key={asset.ticker}
@@ -382,7 +395,14 @@ function GrandmaMarkets() {
                     <div className="flex items-center gap-4 p-4">
                       <LogoIcon asset={asset} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">{asset.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">{asset.name}</p>
+                          {apy !== undefined && (
+                            <Badge className="bg-foreground text-background text-[10px] font-semibold px-1.5 py-0.5">
+                              {apy >= 0 ? "+" : ""}{(apy * 100).toFixed(2)}% APY
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">{asset.ticker}</p>
                       </div>
                       <div className="text-right">
@@ -413,6 +433,7 @@ function GrandmaMarkets() {
 function ExpertMarkets() {
   const assets = usePythPrices();
   const sparklines = usePythSparklines();
+  const apyMap = useStockApy();
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("All assets");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -593,7 +614,7 @@ function ExpertMarkets() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
               >
-                <AssetCard asset={asset} sparkline={sparklines[asset.ticker]} />
+                <AssetCard asset={asset} sparkline={sparklines[asset.ticker]} apy={apyMap[asset.ticker]} />
               </motion.div>
             ))}
           </div>
@@ -606,7 +627,7 @@ function ExpertMarkets() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: i * 0.02 }}
               >
-                <AssetRow asset={asset} sparkline={sparklines[asset.ticker]} />
+                <AssetRow asset={asset} sparkline={sparklines[asset.ticker]} apy={apyMap[asset.ticker]} />
               </motion.div>
             ))}
           </Card>
