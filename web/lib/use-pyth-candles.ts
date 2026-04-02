@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import type { Candle } from "@/components/candlestick-chart";
 
 const BENCHMARKS_URL = "https://benchmarks.pyth.network";
@@ -44,7 +44,7 @@ export function usePythCandles(
   const currentCandleRef = useRef<Candle | null>(null);
   const lastCandleTimeRef = useRef<number>(0);
 
-  const config = RESOLUTION_MAP[timeframe] || RESOLUTION_MAP["5m"];
+  const config = useMemo(() => RESOLUTION_MAP[timeframe] || RESOLUTION_MAP["5m"], [timeframe]);
 
   // Fetch historical OHLC from Pyth Benchmarks TradingView shim
   const fetchHistory = useCallback(async () => {

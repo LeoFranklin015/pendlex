@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { type PublicClient, type Address, formatUnits } from "viem";
 import { EXCHANGE_ABI } from "./abis/XStreamExchange";
 import { fetchPythUpdateData } from "./pyth";
@@ -59,6 +59,14 @@ export function usePositions(
   const [positions, setPositions] = useState<PositionWithPnl[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Refs to avoid infinite re-render loops from unstable object references
+  const clientRef = useRef(publicClient);
+  clientRef.current = publicClient;
+  const cfgRef = useRef(cfg);
+  cfgRef.current = cfg;
+  const storedRef = useRef(stored);
+  storedRef.current = stored;
+
   // Load from localStorage when account/chainId become available
   useEffect(() => {
     if (!account || !chainId) {
@@ -96,28 +104,32 @@ export function usePositions(
   );
 
   const refreshPositions = useCallback(async () => {
-    if (!account || !chainId || !publicClient || !cfg || stored.length === 0) {
+    const pc = clientRef.current;
+    const c = cfgRef.current;
+    const s = storedRef.current;
+
+    if (!account || !chainId || !pc || !c || s.length === 0) {
       setPositions([]);
       return;
     }
 
     setLoading(true);
     try {
-      const exchangeAddress = cfg.exchange as Address;
-      const pythContractAddress = cfg.pythContract as Address;
+      const exchangeAddress = c.exchange as Address;
+      const pythContractAddress = c.pythContract as Address;
 
       // Collect all unique feedIds needed
-      const feedIds = cfg.assets.map((a) => a.pythFeedId);
+      const feedIds = c.assets.map((a) => a.pythFeedId);
 
       // Fetch fresh Pyth update data once for all positions
-      const { updateData } = await fetchPythUpdateData(feedIds, pythContractAddress, publicClient);
+      const { updateData } = await fetchPythUpdateData(feedIds, pythContractAddress, pc);
 
       const results: PositionWithPnl[] = [];
 
-      for (const sp of stored) {
+      for (const sp of s) {
         try {
           // Read on-chain position data
-          const pos = await publicClient.readContract({
+          const pos = await pc.readContract({
             address: exchangeAddress,
             abi: EXCHANGE_ABI,
             functionName: "getPosition",
@@ -142,7 +154,7 @@ export function usePositions(
 
           // Get unrealized PnL -- getUnrealizedPnl is payable but we call it
           // via simulateContract since we only need the return values
-          const pnlResult = await publicClient.simulateContract({
+          const pnlResult = await pc.simulateContract({
             address: exchangeAddress,
             abi: EXCHANGE_ABI,
             functionName: "getUnrealizedPnl",
@@ -185,7 +197,7 @@ export function usePositions(
     } finally {
       setLoading(false);
     }
-  }, [account, chainId, publicClient, cfg, stored]);
+  }, [account, chainId]);
 
   return { stored, positions, loading, addPosition, removePosition, refreshPositions };
 }

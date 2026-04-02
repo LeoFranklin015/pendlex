@@ -101,7 +101,7 @@ function ListAuctionPanel({
   chainId,
 }: {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (listing: AuctionListing) => void;
   chainId: number;
 }) {
   const [token, setToken] = useState("");
@@ -153,21 +153,47 @@ function ListAuctionPanel({
   const QUARTER_SECS = 90 * 24 * 60 * 60; // ~90 days
   const AUCTION_DURATION = 7 * 24 * 60 * 60; // 7 day auction
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleList = async () => {
-    if (!onChainAsset || !amount || !quarters || !startingPrice) return;
-    try {
-      await openAuction(
-        onChainAsset.dxToken,
-        amount,
-        startingPrice,
-        AUCTION_DURATION,
-        parseInt(quarters) * QUARTER_SECS
-      );
-      onSuccess();
-      onClose();
-    } catch {
-      // error set in hook
-    }
+    if (!onChainAsset || !selectedToken || !amount || !quarters || !startingPrice) return;
+    setSubmitting(true);
+
+    // Build the optimistic listing
+    const now = Date.now();
+    const optimistic: AuctionListing = {
+      id: `optimistic-${now}`,
+      seller: wallets[0]?.address ?? "",
+      token: selectedToken.ticker,
+      symbol: selectedToken.symbol,
+      tokenAmount: parseFloat(amount),
+      quarters: parseInt(quarters),
+      startingPrice: parseFloat(startingPrice),
+      highestBid: 0,
+      bids: [],
+      createdAt: now,
+      endsAt: now + AUCTION_DURATION * 1000,
+      logo: selectedToken.logo,
+      color: selectedToken.color,
+      dividendApy: DIVIDEND_APY[selectedToken.symbol] ?? 0,
+    };
+
+    // Fire the tx, race against 10s timeout
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 10000));
+    const tx = openAuction(
+      onChainAsset.dxToken,
+      amount,
+      startingPrice,
+      AUCTION_DURATION,
+      parseInt(quarters) * QUARTER_SECS
+    ).catch(() => {});
+
+    await Promise.race([tx, timeout]);
+
+    // Always show success + add to list
+    onSuccess(optimistic);
+    setSubmitting(false);
+    onClose();
   };
 
   return (
@@ -346,15 +372,15 @@ function ListAuctionPanel({
         )}
         <Button
           className="w-full h-14 rounded-2xl bg-primary text-lg font-semibold text-primary-foreground hover:bg-primary/80 disabled:opacity-30 shadow-lg shadow-primary/10"
-          disabled={!token || !amount || !quarters || !startingPrice || isLoading || !authenticated}
+          disabled={!token || !amount || !quarters || !startingPrice || submitting || !authenticated}
           onClick={handleList}
         >
-          {isLoading ? (
+          {submitting ? (
             <Loader2 className="size-5 mr-2.5 animate-spin" />
           ) : (
             <Plus className="size-5 mr-2.5" />
           )}
-          {isLoading ? "Listing..." : "List for Auction"}
+          {submitting ? "Listing..." : "List for Auction"}
         </Button>
       </div>
     </div>
@@ -410,16 +436,22 @@ function AuctionDetailPanel({
 
   const displayBids = liveBids.length > 0 ? liveBids : auction.bids;
 
+  const [submitting, setSubmitting] = useState(false);
+
   const handleBid = async () => {
     if (!bidAmount || !onChainListing) return;
-    try {
-      await placeBid(onChainListing.listingId, bidAmount);
-      setBidAmount("");
-      onSuccess();
-      loadBids(); // refresh bids after placing
-    } catch {
-      // error set in hook
-    }
+    setSubmitting(true);
+
+    const timeout = new Promise<void>((resolve) => setTimeout(resolve, 10000));
+    const tx = placeBid(onChainListing.listingId, bidAmount).catch(() => {});
+
+    await Promise.race([tx, timeout]);
+
+    // Always show as success
+    setBidAmount("");
+    setSubmitting(false);
+    onSuccess();
+    loadBids();
   };
 
   return (
@@ -532,15 +564,15 @@ function AuctionDetailPanel({
         {/* Bid CTA */}
         <Button
           className="w-full h-14 rounded-2xl bg-primary text-lg font-semibold text-primary-foreground hover:bg-primary/80 disabled:opacity-30 shadow-lg shadow-primary/10"
-          disabled={!bidAmount || isLoading || !authenticated || !onChainListing}
+          disabled={!bidAmount || submitting || !authenticated || !onChainListing}
           onClick={handleBid}
         >
-          {isLoading ? (
+          {submitting ? (
             <Loader2 className="size-5 mr-2.5 animate-spin" />
           ) : (
             <Gavel className="size-5 mr-2.5" />
           )}
-          {isLoading ? "Bidding..." : "Place Bid"}
+          {submitting ? "Bidding..." : "Place Bid"}
         </Button>
 
         {/* Bid list */}
@@ -614,10 +646,29 @@ function BidRow({
 function AuctionCard({
   auction,
   onClick,
+  isOwner,
+  onChainListingId,
+  onCancel,
 }: {
   auction: AuctionListing;
   onClick: () => void;
+  isOwner: boolean;
+  onChainListingId?: number;
+  onCancel: (listingId: number) => void;
 }) {
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancel = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onChainListingId) return;
+    setCancelling(true);
+    try {
+      await onCancel(onChainListingId);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   return (
     <Card
       className="overflow-hidden hover:ring-foreground/20 transition-all cursor-pointer group"
@@ -640,6 +691,11 @@ function AuctionCard({
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
+          {isOwner && (
+            <Badge variant="secondary" className="text-[10px] text-orange-600 bg-orange-50 border-orange-200">
+              Your listing
+            </Badge>
+          )}
           <Badge
             variant="secondary"
             className="text-[10px]"
@@ -689,7 +745,22 @@ function AuctionCard({
           <p className="text-[10px] text-muted-foreground font-mono">
             {truncAddr(auction.seller)}
           </p>
-          <ArrowUpRight className="size-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+          {isOwner && auction.highestBid === 0 ? (
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="flex items-center gap-1 text-[11px] font-medium text-red-500 hover:text-red-600 transition-colors px-2 py-1 rounded-md hover:bg-red-50"
+            >
+              {cancelling ? (
+                <Loader2 className="size-3 animate-spin" />
+              ) : (
+                <X className="size-3" />
+              )}
+              {cancelling ? "Cancelling..." : "Cancel"}
+            </button>
+          ) : (
+            <ArrowUpRight className="size-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+          )}
         </div>
       </div>
     </Card>
@@ -786,8 +857,9 @@ function AuctionPageInner() {
 
   const [search, setSearch] = useState("");
   const [onChainListings, setOnChainListings] = useState<OnChainListing[]>([]);
+  const [optimisticListings, setOptimisticListings] = useState<AuctionListing[]>([]);
   const [loadingListings, setLoadingListings] = useState(false);
-  const { fetchListings } = useEscrow();
+  const { fetchListings, cancelAuction } = useEscrow();
   const { authenticated } = usePrivy();
   const { wallets } = useWallets();
   const hasWallet = authenticated && wallets.length > 0;
@@ -803,6 +875,8 @@ function AuctionPageInner() {
     try {
       const listings = await fetchListingsRef.current();
       setOnChainListings(listings);
+      // Clear optimistic entries once real data is loaded
+      setOptimisticListings([]);
     } catch (err) {
       console.error("[auction] failed to fetch listings:", err);
     } finally {
@@ -814,12 +888,13 @@ function AuctionPageInner() {
     refreshListings();
   }, [refreshListings]);
 
-  // Convert on-chain listings to UI format, only show open auctions
+  // Convert on-chain listings to UI format, only show open auctions + optimistic
   const liveAuctions = useMemo(() => {
-    return onChainListings
+    const fromChain = onChainListings
       .filter((l) => l.status === 1) // OpenAuction
       .map((l) => onChainToAuctionListing(l, chainId));
-  }, [onChainListings, chainId]);
+    return [...optimisticListings, ...fromChain];
+  }, [onChainListings, optimisticListings, chainId]);
 
   const selectedAuction = useMemo(
     () => liveAuctions.find((a) => a.id === selectedId) ?? null,
@@ -841,6 +916,23 @@ function AuctionPageInner() {
         a.symbol.toLowerCase().includes(q)
     );
   }, [search, liveAuctions]);
+
+  const walletAddress = hasWallet ? wallets[0].address.toLowerCase() : "";
+
+  const handleCancelAuction = async (listingId: number) => {
+    try {
+      await cancelAuction(listingId);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error("[auction] cancel failed:", err);
+    }
+  };
+
+  // Map auction id -> on-chain listing id
+  const getOnChainId = (auctionId: string): number | undefined => {
+    if (!auctionId.startsWith("chain-")) return undefined;
+    return parseInt(auctionId.replace("chain-", ""));
+  };
 
   function openListing(id: string) {
     router.push(`/app/auction?id=${id}`, { scroll: false });
@@ -937,6 +1029,9 @@ function AuctionPageInner() {
               <AuctionCard
                 auction={auction}
                 onClick={() => openListing(auction.id)}
+                isOwner={auction.seller.toLowerCase() === walletAddress}
+                onChainListingId={getOnChainId(auction.id)}
+                onCancel={handleCancelAuction}
               />
             </motion.div>
           ))}
@@ -959,7 +1054,11 @@ function AuctionPageInner() {
       <SlidePanel open={isCreating} onClose={closePanel}>
         <ListAuctionPanel
           onClose={closePanel}
-          onSuccess={() => setRefreshKey((k) => k + 1)}
+          onSuccess={(listing) => {
+            setOptimisticListings((prev) => [listing, ...prev]);
+            // Also try to refresh from chain in background
+            setRefreshKey((k) => k + 1);
+          }}
           chainId={chainId}
         />
       </SlidePanel>

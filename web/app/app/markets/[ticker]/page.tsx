@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -482,10 +482,15 @@ function ExpertDetail({ asset }: { asset: Asset }) {
   const exchange = useExchange();
   const chainId = exchange.chainId ?? 763373;
   const cfg = exchange.cfg;
-  const publicClient = exchange.publicClient ?? getPublicClient();
+  // Memoize clients so hooks don't get new references every render
+  const publicClient = useMemo(
+    () => exchange.publicClient ?? getPublicClient(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [chainId]
+  );
 
   // Always check prod Eth Sepolia MarketKeeper for market status
-  const prodSepoliaClient = getPublicClient(sepolia);
+  const prodSepoliaClient = useMemo(() => getPublicClient(sepolia), []);
   const { isOpen: marketOpen, loading: marketLoading } = useMarketStatus(
     prodSepoliaClient,
     "0xF382a19D4F3A8aD4288eE55CA363f47E91ceD563",
