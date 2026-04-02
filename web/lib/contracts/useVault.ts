@@ -64,7 +64,7 @@ export function useVault() {
     if (!wallet) throw new Error("No wallet connected");
 
     const { chain, chainId } = getChainFromWallet(wallet);
-    const cfg = getContractConfig(chainId, isMock);
+    const cfg = getContractConfig(chainId, isMock ? "mock" : "prod");
     const provider = await wallet.getEthereumProvider();
 
     const publicClient = createPublicClient({ chain, transport: http() });
@@ -89,9 +89,9 @@ export function useVault() {
       setError(null);
       setTxHash(null);
       try {
-        const { publicClient, walletClient, cfg, chainId, account } =
+        const { publicClient, walletClient, cfg, account } =
           await getClients();
-        const asset = getAssetBySymbol(chainId, symbol);
+        const asset = getAssetBySymbol(cfg, symbol);
         if (!asset) throw new Error(`Asset ${symbol} not found`);
 
         const rawAmount = parseUnits(amount, 18);
@@ -135,9 +135,9 @@ export function useVault() {
       setError(null);
       setTxHash(null);
       try {
-        const { publicClient, walletClient, cfg, chainId, account } =
+        const { publicClient, walletClient, cfg, account } =
           await getClients();
-        const asset = getAssetBySymbol(chainId, symbol);
+        const asset = getAssetBySymbol(cfg, symbol);
         if (!asset) throw new Error(`Asset ${symbol} not found`);
 
         const rawAmount = parseUnits(amount, 18);
@@ -189,9 +189,9 @@ export function useVault() {
       setError(null);
       setTxHash(null);
       try {
-        const { publicClient, walletClient, cfg, chainId, account } =
+        const { publicClient, walletClient, cfg, account } =
           await getClients();
-        const asset = getAssetBySymbol(chainId, symbol);
+        const asset = getAssetBySymbol(cfg, symbol);
         if (!asset) throw new Error(`Asset ${symbol} not found`);
 
         const hash = await walletClient.writeContract({
@@ -219,8 +219,8 @@ export function useVault() {
 
   const getBalances = useCallback(
     async (symbol: string) => {
-      const { publicClient, chainId, account } = await getClients();
-      const asset = getAssetBySymbol(chainId, symbol);
+      const { publicClient, cfg: balCfg, account } = await getClients();
+      const asset = getAssetBySymbol(balCfg, symbol);
       if (!asset) throw new Error(`Asset ${symbol} not found`);
 
       const [xStockBal, pxBal, dxBal] = await Promise.all([
@@ -255,8 +255,8 @@ export function useVault() {
 
   const getPendingDividend = useCallback(
     async (symbol: string) => {
-      const { publicClient, cfg, chainId, account } = await getClients();
-      const asset = getAssetBySymbol(chainId, symbol);
+      const { publicClient, cfg, account } = await getClients();
+      const asset = getAssetBySymbol(cfg, symbol);
       if (!asset) throw new Error(`Asset ${symbol} not found`);
 
       const raw = (await publicClient.readContract({

@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,7 @@ import {
   Info,
   MoreHorizontal,
   X,
+  Circle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import CandlestickChart from "@/components/candlestick-chart";
@@ -29,6 +30,13 @@ import { type Asset } from "@/lib/market-data";
 import { usePythPrices } from "@/lib/use-pyth-prices";
 import { usePythCandles } from "@/lib/use-pyth-candles";
 import { useAppMode } from "@/lib/mode-context";
+import { useExchange } from "@/lib/contracts/use-exchange";
+import { useMarketStatus } from "@/lib/contracts/use-market-status";
+import { usePositions, type PositionWithPnl } from "@/lib/contracts/use-positions";
+import { useTxFlow } from "@/lib/contracts/use-tx-flow";
+import { useErc20Balance } from "@/lib/contracts/use-erc20";
+import { useContractMode } from "@/lib/contract-mode-context";
+import { getPublicClient } from "@/lib/contracts/client";
 
 // ---- Helpers ----
 
@@ -64,10 +72,14 @@ function OrderForm({
   asset,
   stopLoss,
   onStopLossChange,
+  marketOpen,
+  onPositionOpened,
 }: {
   asset: Asset;
   stopLoss: number | null;
   onStopLossChange: (v: number | null) => void;
+  marketOpen: boolean;
+  onPositionOpened?: () => void;
 }) {
   const [tab, setTab] = useState<"long" | "short">("long");
   const [orderType, setOrderType] = useState<"market" | "limit">("market");
@@ -75,9 +87,50 @@ function OrderForm({
   const [leverage, setLeverage] = useState(25);
   const [stopLossEnabled, setStopLossEnabled] = useState(false);
 
+  const exchange = useExchange();
+  const { state: txState, error: txError, execute } = useTxFlow();
+
+  // USDC balance
+  const { balance: usdcBalance, refresh: refreshBalance } = useErc20Balance(
+    exchange.cfg?.usdc as `0x${string}` | undefined,
+    exchange.account ?? undefined,
+    exchange.publicClient ?? null,
+    6,
+  );
+
+  // Refresh balance on mount and after success
+  useEffect(() => { refreshBalance(); }, [refreshBalance]);
+  useEffect(() => { if (txState === "success") refreshBalance(); }, [txState, refreshBalance]);
+
   const payNum = parseFloat(payAmount) || 0;
   const positionSize = payNum * leverage;
   const positive = asset.change >= 0;
+
+  const handleSubmit = async () => {
+    if (payNum <= 0 || !exchange.connected) return;
+    await execute(async () => {
+      const result = tab === "long"
+        ? await exchange.openLong(asset.ticker, payNum, leverage)
+        : await exchange.openShort(asset.ticker, payNum, leverage);
+      if (onPositionOpened) onPositionOpened();
+      return { transactionHash: result.receipt.transactionHash };
+    });
+  };
+
+  const buttonLabel = (() => {
+    switch (txState) {
+      case "approving": return "Approving...";
+      case "pending": return "Confirming...";
+      case "success": return "Done!";
+      case "error": return "Try Again";
+      default:
+        if (!exchange.connected) return "Connect Wallet";
+        if (!marketOpen) return "Market Closed";
+        return `${tab === "long" ? "Long" : "Short"} ${asset.symbol}/USD`;
+    }
+  })();
+
+  const disabled = payNum <= 0 || !exchange.connected || !marketOpen || txState === "pending" || txState === "approving";
 
   const handleStopLossToggle = () => {
     if (stopLossEnabled) {
@@ -176,7 +229,7 @@ function OrderForm({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            ${payNum.toFixed(2)}
+            Balance: {parseFloat(usdcBalance).toLocaleString(undefined, { minimumFractionDigits: 2 })} USDC
           </p>
         </div>
 
@@ -342,13 +395,79 @@ function OrderForm({
               ? "bg-primary text-primary-foreground hover:bg-primary/80"
               : "bg-red-500 text-white hover:bg-red-600"
           }`}
-          disabled={payNum <= 0}
+          disabled={disabled}
+          onClick={handleSubmit}
         >
-          {tab === "long" ? "Long" : "Short"}{" "}
-          {asset.symbol}/USD
+          {buttonLabel}
         </Button>
+        {txState === "error" && txError && (
+          <p className="text-xs text-red-500 mt-2 text-center">{txError}</p>
+        )}
+        {txState === "success" && (
+          <p className="text-xs text-green-500 mt-2 text-center">Position opened successfully!</p>
+        )}
       </div>
     </div>
+  );
+}
+
+// ---- Position Row ----
+
+function PositionRow({
+  position,
+  currentPrice,
+  onClose,
+}: {
+  position: PositionWithPnl;
+  currentPrice: number;
+  onClose: () => Promise<void>;
+}) {
+  const [closing, setClosing] = useState(false);
+  const pnlNum = parseFloat(position.pnl);
+  const pnlPositive = pnlNum >= 0;
+
+  const handleClose = async () => {
+    setClosing(true);
+    try {
+      await onClose();
+    } catch {
+      // handled elsewhere
+    } finally {
+      setClosing(false);
+    }
+  };
+
+  return (
+    <tr className="border-b border-border/30 hover:bg-muted/20">
+      <td className="py-2.5">
+        <div className="flex items-center gap-1.5">
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+            position.isLong ? "bg-primary/10 text-primary" : "bg-red-500/10 text-red-500"
+          }`}>
+            {position.isLong ? "LONG" : "SHORT"}
+          </span>
+          <span className="font-medium">{position.ticker}</span>
+        </div>
+      </td>
+      <td className="text-right py-2.5 font-mono">
+        ${parseFloat(position.notional).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </td>
+      <td className="text-right py-2.5">{position.leverage}x</td>
+      <td className="text-right py-2.5 font-mono">${parseFloat(position.entryPrice).toFixed(2)}</td>
+      <td className="text-right py-2.5 font-mono">${currentPrice.toFixed(2)}</td>
+      <td className={`text-right py-2.5 font-mono font-medium ${pnlPositive ? "text-primary" : "text-red-500"}`}>
+        {pnlPositive ? "+" : ""}${pnlNum.toFixed(2)}
+      </td>
+      <td className="text-right py-2.5">
+        <button
+          onClick={handleClose}
+          disabled={closing}
+          className="px-2.5 py-1 rounded-md text-[10px] font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 disabled:opacity-50"
+        >
+          {closing ? "Closing..." : "Close"}
+        </button>
+      </td>
+    </tr>
   );
 }
 
@@ -357,6 +476,30 @@ function OrderForm({
 function ExpertDetail({ asset }: { asset: Asset }) {
   const [stopLoss, setStopLoss] = useState<number | null>(null);
   const [timeframe, setTimeframe] = useState("5m");
+
+  const { contractMode } = useContractMode();
+  const exchange = useExchange();
+  const chainId = exchange.chainId ?? 763373;
+  const cfg = exchange.cfg;
+  const publicClient = exchange.publicClient ?? getPublicClient();
+
+  const { isOpen: marketOpen, loading: marketLoading } = useMarketStatus(
+    publicClient,
+    cfg?.marketKeeper as `0x${string}` | undefined,
+  );
+
+  const {
+    positions,
+    loading: positionsLoading,
+    removePosition,
+    refreshPositions,
+  } = usePositions(exchange.account ?? undefined, chainId, publicClient, cfg ?? null);
+
+  useEffect(() => {
+    refreshPositions();
+    const id = setInterval(refreshPositions, 30_000);
+    return () => clearInterval(id);
+  }, [refreshPositions]);
 
   const { candles, loading: candlesLoading } = usePythCandles(
     asset.symbol,
@@ -419,6 +562,13 @@ function ExpertDetail({ asset }: { asset: Asset }) {
         </div>
       </div>
 
+      {!marketOpen && !marketLoading && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-xs text-red-500 font-medium">
+          <Circle className="size-2 fill-current" />
+          Market is closed. Trading is disabled.
+        </div>
+      )}
+
       {/* Main 2-panel layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Center: Chart + Positions */}
@@ -460,7 +610,7 @@ function ExpertDetail({ asset }: { asset: Asset }) {
               <div className="flex items-center justify-between px-4">
                 <TabsList className="h-10">
                   <TabsTrigger value="positions" className="text-xs">
-                    Positions 0
+                    Positions {positions.length}
                   </TabsTrigger>
                   <TabsTrigger value="orders" className="text-xs">
                     Orders 0
@@ -480,20 +630,38 @@ function ExpertDetail({ asset }: { asset: Asset }) {
                         <th className="text-right py-2 font-medium">Leverage</th>
                         <th className="text-right py-2 font-medium">Entry Price</th>
                         <th className="text-right py-2 font-medium">Mark Price</th>
-                        <th className="text-right py-2 font-medium">Liq. Price</th>
                         <th className="text-right py-2 font-medium">PNL</th>
                         <th className="text-right py-2 font-medium">Action</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          No open positions
-                        </td>
-                      </tr>
+                      {positionsLoading ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                            Loading positions...
+                          </td>
+                        </tr>
+                      ) : positions.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                            No open positions
+                          </td>
+                        </tr>
+                      ) : (
+                        positions.map((pos) => (
+                          <PositionRow
+                            key={pos.positionId}
+                            position={pos}
+                            currentPrice={asset.price}
+                            onClose={async () => {
+                              const fn = pos.isLong ? exchange.closeLong : exchange.closeShort;
+                              await fn(pos.positionId, pos.ticker);
+                              removePosition(pos.positionId);
+                              refreshPositions();
+                            }}
+                          />
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -518,6 +686,8 @@ function ExpertDetail({ asset }: { asset: Asset }) {
             asset={asset}
             stopLoss={stopLoss}
             onStopLossChange={setStopLoss}
+            marketOpen={marketOpen}
+            onPositionOpened={refreshPositions}
           />
         </div>
       </div>

@@ -64,7 +64,7 @@ const steps = [
   {
     num: "01",
     title: "Deposit xStock",
-    desc: "Lock a registered xStock (for example AAPL, ABT, or SPY) in the vault. One deposit, two claims on the same underlying.",
+    desc: "Lock a registered xStock (for example AAPL, NVDA, or SPY) in the vault. One deposit, two claims on the same underlying.",
     icon: Vault,
   },
   {
@@ -109,7 +109,7 @@ const personas = [
 ];
 
 const stats = [
-  { label: "Launch universe", value: "AAPL, ABT, SPY" },
+  { label: "Assets live", value: "8 xStocks" },
   { label: "dx market", value: "24/7" },
   { label: "px exchange", value: "NYSE hours" },
   { label: "Price oracle", value: "Pyth" },
@@ -122,7 +122,7 @@ const faqs = [
   },
   {
     q: "How do I get started?",
-    a: "Connect your wallet, deposit a supported xStock (like AAPL, ABT, or SPY) into the vault, and receive your dx and px tokens. You can then hold for yield, trade on the exchange, or recombine anytime to withdraw the underlying.",
+    a: "Connect your wallet, deposit a supported xStock (like AAPL, NVDA, or SPY) into the vault, and receive your dx and px tokens. You can then hold for yield, trade on the exchange, or recombine anytime to withdraw the underlying.",
   },
   {
     q: "When can I trade px tokens?",
@@ -137,8 +137,8 @@ const faqs = [
     a: "Yes. Burn equal amounts of dx and px tokens to redeem the underlying xStock at any time. A small recombination fee (0.05%) applies. Arbitrageurs keep the dx + px bundle priced close to the underlying.",
   },
   {
-    q: "What oracle powers the price feed?",
-    a: "xStream uses Pyth Network for real-time price data. Pyth provides low-latency, high-fidelity price feeds sourced directly from institutional market makers, ensuring accurate mark-to-market for px positions.",
+    q: "What chains is xStream deployed on?",
+    a: "xStream is currently live on Ink Sepolia and Ethereum Sepolia testnets with 8 tokenized assets: TSLA, NVDA, GOOGL, AAPL, SPY, TBLL, GLD, and SLV. Connect any EVM-compatible wallet to get started.",
   },
   {
     q: "What are the fees?",
@@ -232,7 +232,7 @@ export default function Home() {
                 variant="outline"
                 className="border-black/15 bg-black/[0.03] px-3 py-1 text-xs text-muted-foreground"
               >
-                Base + Pyth
+                Ink + Ethereum Sepolia
               </Badge>
             </motion.div>
 
@@ -254,7 +254,7 @@ export default function Home() {
             >
               Split one xStock into dx (dividend rights) and px (session-bound
               price). Lean into yield or hedge it, trade each leg, then recombine
-              to redeem. AAPL, ABT, and SPY on Base with Pyth.
+              to redeem. 8 assets live on Ink Sepolia and Ethereum Sepolia.
             </motion.p>
 
             <motion.div
@@ -578,8 +578,8 @@ export default function Home() {
           </h2>
           <p className="mt-4 max-w-xl text-base text-muted-foreground">
             Explore the vault, markets, and docs. The same derivative logic that
-            powers huge TradFi interest and dividend markets is now composable
-            on-chain. Mainnet rollout follows the roadmap in the PRD.
+            powers TradFi dividend markets is now composable on-chain -- live
+            on Ink Sepolia and Ethereum Sepolia.
           </p>
           <div className="mt-10">
             <Link

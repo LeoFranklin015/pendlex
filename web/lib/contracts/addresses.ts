@@ -1,6 +1,27 @@
 // Contract addresses from INTEGRATION_GUIDE.md
 
-export const PROD_INK_SEPOLIA = {
+export interface AssetAddresses {
+  symbol: string;
+  ticker: string;
+  xStock: string;
+  pxToken: string;
+  dxToken: string;
+  lpToken: string;
+  pythFeedId: string;
+}
+
+export interface ContractConfig {
+  pythContract: string;
+  pythAdapter: string;
+  usdc: string;
+  vault: string;
+  exchange: string;
+  marketKeeper: string;
+  escrow: string;
+  assets: readonly AssetAddresses[];
+}
+
+export const PROD_INK_SEPOLIA: ContractConfig = {
   pythContract: "0x2880aB155794e7179c9eE2e38200202908C17B43",
   pythAdapter: "0xb26b353B4247f9db66175b333CDa74a7c068D341",
   usdc: "0xC80EF19a1F4F49953B0383b411a74fd50f2ca361",
@@ -74,9 +95,9 @@ export const PROD_INK_SEPOLIA = {
       pythFeedId: "0xf2fb02c32b055c805e7238d628e5e9dadef274376114eb1f012337cabe93871e",
     },
   ],
-} as const;
+};
 
-export const PROD_ETH_SEPOLIA = {
+export const PROD_ETH_SEPOLIA: ContractConfig = {
   pythContract: "0x2880aB155794e7179c9eE2e38200202908C17B43",
   pythAdapter: "0x04e32F127a2baEA28512Fa04F1dCD82e1Fdf3971",
   usdc: "0xF2CE01ca6E39873a4d51cC40353Df309Ec424103",
@@ -150,7 +171,7 @@ export const PROD_ETH_SEPOLIA = {
       pythFeedId: "0xf2fb02c32b055c805e7238d628e5e9dadef274376114eb1f012337cabe93871e",
     },
   ],
-} as const;
+};
 
 export const MOCK_INK_SEPOLIA = {
   mockPyth: "0x6C0602E1ef5F6a841ae61DF5A996d04BE7D21F6D",
@@ -172,7 +193,7 @@ export const MOCK_ETH_SEPOLIA = {
   escrow: "0xb2131C8384599d95d2Cdd7733529Bfd7B3c68375",
 } as const;
 
-export type AssetConfig = (typeof PROD_INK_SEPOLIA.assets)[number];
+export type ContractMode = "prod" | "mock";
 
 // Mock deployments created their own MockXStock tokens during MockDeploy.
 // Those addresses are NOT the same as the prod Dinari xStock addresses.
@@ -191,14 +212,11 @@ export function getContractConfig(chainId: number, _useMock: boolean) {
   }
 }
 
-export function getAssetByTicker(chainId: number, ticker: string) {
-  // Assets are the same between prod/mock on the same chain for prod deployments
-  const cfg = chainId === 763373 ? PROD_INK_SEPOLIA : PROD_ETH_SEPOLIA;
+export function getAssetByTicker(cfg: ContractConfig, ticker: string): AssetAddresses | null {
   return cfg.assets.find((a) => a.ticker === ticker) ?? null;
 }
 
-export function getAssetBySymbol(chainId: number, symbol: string) {
-  const cfg = chainId === 763373 ? PROD_INK_SEPOLIA : PROD_ETH_SEPOLIA;
+export function getAssetBySymbol(cfg: ContractConfig, symbol: string): AssetAddresses | null {
   return cfg.assets.find((a) => a.symbol === symbol) ?? null;
 }
 

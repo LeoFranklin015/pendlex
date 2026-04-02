@@ -11,167 +11,131 @@ function TokenSplitSVG() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: false, margin: "-60px" });
 
+  const CYCLE = 2.0;
+  const DELAY = 3.0;
+
   return (
     <div ref={ref} className="flex items-center justify-center h-52">
       <svg viewBox="0 0 260 180" className="w-full max-w-[260px]">
         <defs>
           <filter id="glow-ts">
-            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <radialGradient id="xspy-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#4d7a00" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#4d7a00" stopOpacity="0.04" />
+          <radialGradient id="xstock-grad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#4d7a00" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#4d7a00" stopOpacity="0.03" />
           </radialGradient>
-          <radialGradient id="dx-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#4d7a00" stopOpacity="0.26" />
-            <stop offset="100%" stopColor="#4d7a00" stopOpacity="0.04" />
+          <radialGradient id="dx-grad-v2" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#4d7a00" stopOpacity="0.24" />
+            <stop offset="100%" stopColor="#4d7a00" stopOpacity="0.03" />
           </radialGradient>
-          <radialGradient id="px-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.05" />
+          <radialGradient id="px-grad-v2" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.04" />
           </radialGradient>
         </defs>
 
-        {/* Source circle -- xSPY */}
+        {/* Source token */}
         <motion.circle
-          cx="130" cy="60"
-          r="34"
-          fill="url(#xspy-grad)"
-          stroke="#4d7a00"
-          strokeWidth="1.5"
+          cx="130" cy="58" r="32"
+          fill="url(#xstock-grad)" stroke="#4d7a00" strokeWidth="1.4"
           filter="url(#glow-ts)"
-          animate={inView
-            ? { opacity: [1, 1, 0.2], scale: [1, 1.08, 0.6] }
-            : { opacity: 1, scale: 1 }}
-          transition={{ duration: 1.6, delay: 0.3, ease: "easeInOut", repeat: Infinity, repeatDelay: 2 }}
+          animate={inView ? { opacity: [1, 1, 0.15], scale: [1, 1.06, 0.55] } : { opacity: 1, scale: 1 }}
+          transition={{ duration: CYCLE, delay: 0.2, ease: "easeInOut", repeat: Infinity, repeatDelay: DELAY }}
         />
         <motion.text
-          x="130" y="55"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#4d7a00"
-          fontSize="9"
-          fontWeight="700"
-          fontFamily="monospace"
+          x="130" y="54" textAnchor="middle" dominantBaseline="middle"
+          fill="#4d7a00" fontSize="8.5" fontWeight="700" fontFamily="monospace"
           animate={inView ? { opacity: [1, 1, 0] } : { opacity: 1 }}
-          transition={{ duration: 1.6, delay: 0.3, repeat: Infinity, repeatDelay: 2 }}
+          transition={{ duration: CYCLE, delay: 0.2, repeat: Infinity, repeatDelay: DELAY }}
         >
-          xSPY
+          xStock
         </motion.text>
         <motion.text
-          x="130" y="68"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#4d7a00"
-          fontSize="7"
-          fontFamily="monospace"
-          opacity="0.6"
-          animate={inView ? { opacity: [0.6, 0.6, 0] } : { opacity: 0.6 }}
-          transition={{ duration: 1.6, delay: 0.3, repeat: Infinity, repeatDelay: 2 }}
+          x="130" y="67" textAnchor="middle" dominantBaseline="middle"
+          fill="#4d7a00" fontSize="6.5" fontFamily="monospace"
+          animate={inView ? { opacity: [0.55, 0.55, 0] } : { opacity: 0.55 }}
+          transition={{ duration: CYCLE, delay: 0.2, repeat: Infinity, repeatDelay: DELAY }}
         >
-          1:1
+          deposit
         </motion.text>
 
-        {/* Split arrows */}
+        {/* Vault label -- appears as bridge */}
+        <motion.text
+          x="130" y="102" textAnchor="middle" dominantBaseline="middle"
+          fill="#71717a" fontSize="6" fontFamily="monospace" letterSpacing="0.08em"
+          animate={inView ? { opacity: [0, 0.5, 0.5, 0] } : { opacity: 0 }}
+          transition={{ duration: CYCLE, delay: 0.6, repeat: Infinity, repeatDelay: DELAY }}
+        >
+          VAULT
+        </motion.text>
+
+        {/* Split lines */}
         <motion.path
-          d="M 110 95 L 80 128"
-          stroke="#4d7a00"
-          strokeWidth="1"
-          strokeDasharray="4 3"
+          d="M 112 92 L 80 126" stroke="#4d7a00" strokeWidth="1" strokeDasharray="4 3"
           fill="none"
-          opacity="0.4"
-          animate={inView ? { opacity: [0, 0.6, 0.6, 0], pathLength: [0, 1, 1, 1] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          animate={inView ? { opacity: [0, 0.55, 0.55, 0], pathLength: [0, 1, 1, 1] } : { opacity: 0 }}
+          transition={{ duration: CYCLE, delay: 0.75, repeat: Infinity, repeatDelay: DELAY }}
         />
         <motion.path
-          d="M 150 95 L 180 128"
-          stroke="#7dd3fc"
-          strokeWidth="1"
-          strokeDasharray="4 3"
+          d="M 148 92 L 180 126" stroke="#7dd3fc" strokeWidth="1" strokeDasharray="4 3"
           fill="none"
-          opacity="0.4"
-          animate={inView ? { opacity: [0, 0.6, 0.6, 0], pathLength: [0, 1, 1, 1] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          animate={inView ? { opacity: [0, 0.55, 0.55, 0], pathLength: [0, 1, 1, 1] } : { opacity: 0 }}
+          transition={{ duration: CYCLE, delay: 0.75, repeat: Infinity, repeatDelay: DELAY }}
         />
 
-        {/* xdSPY -- dx */}
+        {/* dx token */}
         <motion.circle
-          cx="72" cy="145"
-          r="27"
-          fill="url(#dx-grad)"
-          stroke="#4d7a00"
-          strokeWidth="1.5"
+          cx="70" cy="148" r="26"
+          fill="url(#dx-grad-v2)" stroke="#4d7a00" strokeWidth="1.4"
           filter="url(#glow-ts)"
-          animate={inView ? { opacity: [0, 0, 1], x: [30, 20, 0] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          animate={inView ? { opacity: [0, 0, 1], x: [18, 8, 0] } : { opacity: 0 }}
+          transition={{ duration: CYCLE, delay: 0.85, ease: "easeOut", repeat: Infinity, repeatDelay: DELAY }}
         />
         <motion.text
-          x="72" y="141"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#4d7a00"
-          fontSize="7.5"
-          fontWeight="700"
-          fontFamily="monospace"
+          x="70" y="144" textAnchor="middle" dominantBaseline="middle"
+          fill="#4d7a00" fontSize="8" fontWeight="700" fontFamily="monospace"
           animate={inView ? { opacity: [0, 0, 1] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          transition={{ duration: CYCLE, delay: 0.85, repeat: Infinity, repeatDelay: DELAY }}
         >
-          xdSPY
+          dx
         </motion.text>
         <motion.text
-          x="72" y="153"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#4d7a00"
-          fontSize="6"
-          fontFamily="monospace"
-          opacity="0.6"
-          animate={inView ? { opacity: [0, 0, 0.7] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          x="70" y="156" textAnchor="middle" dominantBaseline="middle"
+          fill="#4d7a00" fontSize="6" fontFamily="monospace"
+          animate={inView ? { opacity: [0, 0, 0.65] } : { opacity: 0 }}
+          transition={{ duration: CYCLE, delay: 0.85, repeat: Infinity, repeatDelay: DELAY }}
         >
-          Income
+          income
         </motion.text>
 
-        {/* xpSPY -- px */}
+        {/* px token */}
         <motion.circle
-          cx="188" cy="145"
-          r="27"
-          fill="url(#px-grad)"
-          stroke="#7dd3fc"
-          strokeWidth="1.5"
+          cx="190" cy="148" r="26"
+          fill="url(#px-grad-v2)" stroke="#7dd3fc" strokeWidth="1.4"
           filter="url(#glow-ts)"
-          animate={inView ? { opacity: [0, 0, 1], x: [-30, -20, 0] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          animate={inView ? { opacity: [0, 0, 1], x: [-18, -8, 0] } : { opacity: 0 }}
+          transition={{ duration: CYCLE, delay: 0.85, ease: "easeOut", repeat: Infinity, repeatDelay: DELAY }}
         />
         <motion.text
-          x="188" y="141"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#7dd3fc"
-          fontSize="7.5"
-          fontWeight="700"
-          fontFamily="monospace"
+          x="190" y="144" textAnchor="middle" dominantBaseline="middle"
+          fill="#7dd3fc" fontSize="8" fontWeight="700" fontFamily="monospace"
           animate={inView ? { opacity: [0, 0, 1] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          transition={{ duration: CYCLE, delay: 0.85, repeat: Infinity, repeatDelay: DELAY }}
         >
-          xpSPY
+          px
         </motion.text>
         <motion.text
-          x="188" y="153"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="#7dd3fc"
-          fontSize="6"
-          fontFamily="monospace"
-          opacity="0.6"
-          animate={inView ? { opacity: [0, 0, 0.7] } : { opacity: 0 }}
-          transition={{ duration: 1.6, delay: 0.8, repeat: Infinity, repeatDelay: 2 }}
+          x="190" y="156" textAnchor="middle" dominantBaseline="middle"
+          fill="#7dd3fc" fontSize="6" fontFamily="monospace"
+          animate={inView ? { opacity: [0, 0, 0.65] } : { opacity: 0 }}
+          transition={{ duration: CYCLE, delay: 0.85, repeat: Infinity, repeatDelay: DELAY }}
         >
-          Price
+          price
         </motion.text>
       </svg>
     </div>
@@ -326,6 +290,21 @@ function YieldCurveSVG() {
           stroke="#a1a1aa" strokeOpacity="0.45" strokeWidth="1"
         />
 
+        {/* dx yield label on area */}
+        <motion.text
+          x={pad.l + iw * 0.3}
+          y={pad.t + ih * 0.55}
+          textAnchor="middle"
+          fill="#4d7a00"
+          fillOpacity="0.35"
+          fontSize="6"
+          fontFamily="monospace"
+          animate={inView ? { opacity: [0, 0, 0.5] } : { opacity: 0 }}
+          transition={{ duration: 0.6, delay: 1.4, repeat: Infinity, repeatDelay: 2.8 }}
+        >
+          dx yield
+        </motion.text>
+
         {/* X-axis label */}
         <text
           x={pad.l + iw / 2}
@@ -336,7 +315,7 @@ function YieldCurveSVG() {
           fontSize="6"
           fontFamily="monospace"
         >
-          time / fee accumulation
+          time
         </text>
       </svg>
     </div>
@@ -415,21 +394,19 @@ function SessionSVG() {
           transition={{ duration: 1.2, delay: 0.4, ease: "easeOut", repeat: Infinity, repeatDelay: 2 }}
         />
 
-        {/* Lock icon (center) */}
+        {/* Center label */}
         <motion.g
           animate={inView ? { opacity: [0, 1] } : { opacity: 0 }}
           transition={{ duration: 0.5, delay: 0.2, repeat: Infinity, repeatDelay: 2.7 }}
         >
-          {/* Lock body */}
-          <rect x={cx - 9} y={cy - 4} width="18" height="14" rx="3"
-            fill="none" stroke="#4d7a00" strokeWidth="1.4" />
-          {/* Lock shackle */}
-          <path
-            d={`M ${cx - 5.5} ${cy - 4} v-6 a5.5 5.5 0 0 1 11 0 v6`}
-            fill="none" stroke="#4d7a00" strokeWidth="1.4"
-          />
-          {/* Keyhole */}
-          <circle cx={cx} cy={cy + 3} r="2" fill="#4d7a00" opacity="0.8" />
+          <text x={cx} y={cy - 4} textAnchor="middle" dominantBaseline="middle"
+            fill="#71717a" fontSize="7" fontFamily="monospace" fontWeight="600">
+            fees
+          </text>
+          <text x={cx} y={cy + 7} textAnchor="middle" dominantBaseline="middle"
+            fill="#71717a" fontSize="5.5" fontFamily="monospace" opacity="0.6">
+            distributed
+          </text>
         </motion.g>
 
         {/* Labels */}
@@ -487,19 +464,19 @@ const panels = [
     svg: <TokenSplitSVG />,
     tag: "Yield Tokenisation",
     title: "Split any xStock",
-    desc: "Deposit AAPL, ABT, or SPY into the vault. One xStock mints 1:1 xdSPY for income and xpSPY for price exposure -- two tokens from a single underlying.",
+    desc: "Deposit TSLA, NVDA, GOOGL, AAPL, SPY, TBLL, GLD, or SLV into the vault. One xStock mints 1:1 dx for income and px for price exposure -- two tokens from a single underlying.",
   },
   {
     svg: <YieldCurveSVG />,
     tag: "Dividend Yield Engine",
     title: "Accumulate income 24/7",
-    desc: "xdSPY accrues rebases, borrow fees, and session settlement fees continuously. Pure income stream with zero price volatility exposure.",
+    desc: "dx accrues rebases, borrow fees, and session settlement fees continuously. Pure income stream with zero price volatility exposure.",
   },
   {
     svg: <SessionSVG />,
     tag: "Session Protocol",
     title: "80% of fees flow to dx",
-    desc: "Every swap, settlement, and borrow generates protocol fees. 80% distributes to xdSPY holders. 20% funds the protocol treasury.",
+    desc: "Every swap, settlement, and borrow generates protocol fees. 80% distributes to dx holders. 20% funds the protocol treasury.",
   },
 ];
 
