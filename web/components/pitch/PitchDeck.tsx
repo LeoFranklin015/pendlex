@@ -23,7 +23,7 @@ import {
   AnimAccumulatorPulse,
   AnimPhaseDots,
 } from "./pitch-visuals";
-import { APP_NAME } from "@/lib/constants";
+import { APP_NAME, APP_NAME_FULL } from "@/lib/constants";
 import { LogoWordmark } from "@/components/LogoWordmark";
 
 type SlideDef = {
@@ -43,22 +43,35 @@ const slides: SlideDef[] = [
   {
     id: "title",
     section: APP_NAME,
-    title: "Split yield from price",
+    title: "Trade dividend yield on-chain",
     centerTitle: true,
     visual: <AnimSplitTokens />,
     body: (
       <>
-        <p className="mt-6 max-w-xl text-center text-base text-white/55">
-          DeFi protocol for tokenized equity ETFs (xStocks): mint{" "}
-          <span className="font-mono text-accent">dx</span> (dividend rights) and{" "}
-          <span className="font-mono text-white/80">px</span> (price only) on{" "}
-          <span className="font-mono text-white/60">Base</span>.
+        <p className="mt-6 max-w-xl text-center text-base text-muted-foreground">
+          <span className="font-mono text-foreground">{APP_NAME_FULL}</span> is a
+          permissionless
+          dividend yield-trading protocol. Wrap LSTs, LRTs, stablecoins, RWAs, and
+          tokenized stocks into{" "}
+          <span className="font-mono text-accent">SY</span>, split into{" "}
+          <span className="font-mono text-accent">YT</span> (yield) and{" "}
+          <span className="font-mono text-foreground">PT</span> (principal), and trade both
+          on the xStream AMM. First app focus: xStocks on{" "}
+          <span className="font-mono text-muted-foreground">Base</span> with{" "}
+          <span className="font-mono text-muted-foreground">Pyth</span> marks.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-2">
-          {["AAPL", "ABT", "SPY", "Pyth", "NYSE sessions"].map((t) => (
+          {[
+            "xStocks",
+            "LSTs / LRTs",
+            "RWAs",
+            "permissionless",
+            "AMM",
+            "Base",
+          ].map((t) => (
             <span
               key={t}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-xs text-white/50"
+              className="rounded-full border border-border bg-muted px-3 py-1 font-mono text-xs text-muted-foreground"
             >
               {t}
             </span>
@@ -70,7 +83,7 @@ const slides: SlideDef[] = [
           transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           aria-hidden
         >
-          <ChevronDown className="size-6 text-white/30" />
+          <ChevronDown className="size-6 text-muted-foreground/60" />
         </motion.div>
       </>
     ),
@@ -78,11 +91,11 @@ const slides: SlideDef[] = [
   {
     id: "exec",
     section: "01 — Executive summary",
-    title: "Two markets, one vault",
+    title: "SY, split, then AMM",
     contentAlign: "start",
     visual: (
       <motion.div
-        className="grid w-full max-w-2xl grid-cols-2 gap-4 md:grid-cols-3"
+        className="grid w-full max-w-3xl grid-cols-2 gap-4 md:grid-cols-4"
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, margin: "-20%" }}
@@ -92,9 +105,10 @@ const slides: SlideDef[] = [
         }}
       >
         {[
-          { k: "dx", sub: "24/7 income market", a: true },
-          { k: "px", sub: "NYSE-hours leverage", a: false },
-          { k: "Vault", sub: "split and recombine", a: true },
+          { k: "SY", sub: "Standardized yield wrapper", a: true },
+          { k: "YT", sub: "Dividend / payout leg", a: true },
+          { k: "PT", sub: "Principal leg", a: false },
+          { k: "AMM", sub: "Trade PT and YT", a: true },
         ].map((c) => (
           <motion.div
             key={c.k}
@@ -102,45 +116,64 @@ const slides: SlideDef[] = [
               hidden: { opacity: 0, y: 16 },
               show: { opacity: 1, y: 0 },
             }}
-            className={`rounded-2xl border p-6 ${
+            className={`rounded-2xl border p-5 ${
               c.a
-                ? "border-accent/25 bg-accent/[0.05]"
-                : "border-white/10 bg-white/[0.02]"
+                ? "border-accent/25 bg-accent/5"
+                : "border-border bg-card"
             }`}
           >
             <p className="font-mono text-lg text-accent">{c.k}</p>
-            <p className="mt-2 text-sm text-white/50">{c.sub}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{c.sub}</p>
           </motion.div>
         ))}
       </motion.div>
     ),
     body: (
-      <ul className="mt-8 max-w-xl space-y-2 text-left text-sm text-white/55">
-        <li>Targets AAPL, ABT, SPY xStocks at launch; registry adds assets.</li>
-        <li>Pyth Network for px pricing; dividend rebases flow 100% to dx.</li>
-        <li>Recombine dx + px to restore xStock; keeps arbitrage bounds tight.</li>
+      <ul className="mt-8 max-w-xl space-y-2 text-left text-sm text-muted-foreground">
+        <li>
+          Second-order layer on existing yield primitives: liquid staking, restaking,
+          stablecoins, RWAs, xStocks, and more.
+        </li>
+        <li>
+          Anyone can create a market on-chain; the official UI curates visibility.
+          Community Listing Portal streamlines safer listings.
+        </li>
+        <li>
+          TradFi interest-derivative markets are huge in notional terms; xStream brings
+          that expressiveness to DeFi for dividend-style cash flows.
+        </li>
       </ul>
     ),
   },
   {
     id: "problem",
     section: "02 — Problem",
-    title: "One token, two audiences",
+    title: "You cannot size dividend yield",
     contentAlign: "start",
     visual: <AnimProblemBars />,
     body: (
-      <ul className="mt-8 max-w-xl space-y-3 text-left text-sm text-white/55">
+      <ul className="mt-8 max-w-xl space-y-3 text-left text-sm text-muted-foreground">
         <li className="flex gap-2">
           <span className="text-red-400/90">-</span>
-          <span>Income investors absorb equity vol they do not want.</span>
+          <span>
+            Payouts on tokenized stocks and yield-bearing assets move with regime:
+            up in bulls, down in bears, plus issuer- and macro noise.
+          </span>
         </li>
         <li className="flex gap-2">
           <span className="text-red-400/90">-</span>
-          <span>Day traders pay implied dividend drag on intraday px.</span>
+          <span>
+            A single receipt token bundles price risk and dividend risk, so holders
+            cannot dial exposure up or down without selling the whole position.
+          </span>
         </li>
         <li className="flex gap-2">
           <span className="text-accent">+</span>
-          <span>No DeFi protocol splits xStocks into tradeable yield vs price.</span>
+          <span>
+            xStream separates upcoming dividends into YT and principal into PT so users
+            can hedge payout downturns, lean into rising dividends, or strip and trade
+            each leg.
+          </span>
         </li>
       </ul>
     ),
@@ -151,37 +184,38 @@ const slides: SlideDef[] = [
     title: "What we ship in v1",
     body: (
       <div className="mt-4 grid max-w-3xl gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
+        <div className="rounded-2xl border border-border bg-card p-6">
           <p className="font-mono text-xs uppercase tracking-widest text-accent">
             In scope
           </p>
-          <ul className="mt-4 space-y-2 text-sm text-white/55">
+          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
             <li className="flex gap-2">
               <Check className="mt-0.5 size-4 shrink-0 text-accent" />
-              Vault split, O(1) dividend claims, recombination.
+              Dividend-tokenization: wrap to SY, mint PT and YT, recombine to exit.
             </li>
             <li className="flex gap-2">
               <Check className="mt-0.5 size-4 shrink-0 text-accent" />
-              dx secondary liquidity; px exchange with session rules.
+              xStream AMM for PT and YT; users trade without mastering pool math.
             </li>
             <li className="flex gap-2">
               <Check className="mt-0.5 size-4 shrink-0 text-accent" />
-              Single chain: Base. Sole oracle: Pyth pull model.
+              xStock rail on Base with Pyth pull oracles; registry expands to more names.
             </li>
           </ul>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
-          <p className="font-mono text-xs uppercase tracking-widest text-white/40">
+        <div className="rounded-2xl border border-border bg-card p-6">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             Out of scope
           </p>
-          <ul className="mt-4 space-y-2 text-sm text-white/45">
+          <ul className="mt-4 space-y-2 text-sm text-muted-foreground/90">
             <li className="flex gap-2">
-              <X className="mt-0.5 size-4 shrink-0 text-white/35" />
-              Custodial UI, non-xStock assets, governance token.
+              <X className="mt-0.5 size-4 shrink-0 text-muted-foreground/70" />
+              Custody-first product, every asset class on day one, protocol governance
+              token.
             </li>
             <li className="flex gap-2">
-              <X className="mt-0.5 size-4 shrink-0 text-white/35" />
-              Fiat ramps, cross-chain, perpetuals (daily settle only).
+              <X className="mt-0.5 size-4 shrink-0 text-muted-foreground/70" />
+              Fiat on-ramps, omnichain routing, and traditional brokerage UX.
             </li>
           </ul>
         </div>
@@ -191,29 +225,29 @@ const slides: SlideDef[] = [
   {
     id: "personas",
     section: "04 — Users",
-    title: "Four core journeys",
+    title: "Strategies the protocol unlocks",
     body: (
       <div className="mt-6 grid max-w-4xl gap-3 sm:grid-cols-2">
         {[
           {
-            n: "Alice",
-            r: "Income",
-            d: "Hold dx for yield; minimal price risk.",
+            n: "Fixed payout",
+            r: "Yield shape",
+            d: "Shape dividend exposure on xStocks and similar yield-bearing tokens.",
           },
           {
-            n: "Bob",
-            r: "Trader",
-            d: "Long or short px in session; USDC collateral.",
+            n: "Long dividends",
+            r: "Bullish payouts",
+            d: "Buy YT when you expect distributions to rise; express a pure payout view.",
           },
           {
-            n: "Carol",
-            r: "Stripper",
-            d: "Split, sell px, keep cheap dx yield.",
+            n: "Strip and hold",
+            r: "Carry",
+            d: "Sell PT, keep YT to earn payout stream without funding the full basket.",
           },
           {
-            n: "Dave",
-            r: "Arb",
-            d: "Lock in dx + px vs xStock mispricing.",
+            n: "Liquidity + arb",
+            r: "LP / basis",
+            d: "Provide AMM liquidity on PT and YT; trade basis vs the underlying SY.",
           },
         ].map((p, i) => (
           <motion.div
@@ -222,12 +256,13 @@ const slides: SlideDef[] = [
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.06 * i }}
-            className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition-colors hover:border-accent/30"
+            className="rounded-2xl border border-border bg-card p-5 transition-colors hover:border-accent/40"
           >
             <p className="font-mono text-xs text-accent">
-              {p.n} — {p.r}
+              {p.n}
+              <span className="text-muted-foreground"> — {p.r}</span>
             </p>
-            <p className="mt-2 text-sm text-white/55">{p.d}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{p.d}</p>
           </motion.div>
         ))}
       </div>
@@ -236,82 +271,99 @@ const slides: SlideDef[] = [
   {
     id: "architecture",
     section: "05 — Architecture",
-    title: "Contracts on Base",
+    title: "On-chain stack (Base)",
     visual: <AnimArchitectureFlow />,
     body: (
-      <p className="mt-6 max-w-2xl text-left text-sm text-white/55">
-        Vault mints px and dx; exchange settles USDC margined positions; PythAdapter
-        normalizes prices; MarketKeeper opens and closes NYSE-aligned sessions and
-        triggers settlement batches.
+      <p className="mt-6 max-w-2xl text-left text-sm text-muted-foreground">
+        Users interact with SY mint/split, the xStream AMM, and listing flows. Price
+        marks for equity rails use Pyth pull; session and settlement modules align
+        risk with when cash equity trades. Same pattern extends to other SY underliers
+        as markets go live.
       </p>
     ),
   },
   {
     id: "protocol",
     section: "06 — Core protocol",
-    title: "Vault, markets, oracle",
+    title: "Tokenization, AMM, oracle",
     contentAlign: "start",
     splitBodyVisual: true,
     visual: (
       <div className="flex w-full max-w-md flex-col items-center gap-6 lg:max-w-none lg:items-end">
         <AnimAccumulatorPulse />
         <div className="flex w-full flex-wrap justify-center gap-2 lg:max-w-md lg:justify-end">
-          {["XStreamVault", "DividendToken", "PrincipalToken", "XStreamExchange", "MarketKeeper"].map(
-            (name) => (
-              <span
-                key={name}
-                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-mono text-[10px] text-white/45"
-              >
-                {name}
-              </span>
-            )
-          )}
+          {[
+            "SY wrapper",
+            "PT / YT",
+            "xStream AMM",
+            "Pyth adapter",
+            "Session keeper",
+          ].map((name) => (
+            <span
+              key={name}
+              className="rounded-full border border-border bg-muted px-3 py-1 font-mono text-[10px] text-muted-foreground"
+            >
+              {name}
+            </span>
+          ))}
         </div>
       </div>
     ),
     body: (
-      <ul className="max-w-xl space-y-2 text-left text-sm text-white/55">
-        <li>100% of dividend delta to dx via Masterchef-style accumulator.</li>
-        <li>px: up to 5x leverage, session-gated opens, keeper settle at close.</li>
-        <li>Stale Pyth prices revert; Hermes VAA supplied per tx.</li>
+      <ul className="max-w-xl space-y-2 text-left text-sm text-muted-foreground">
+        <li>
+          Dividend accrual routes to YT holders; PT represents the ex-yield principal
+          leg. Recombining PT + YT restores SY and keeps basis tight versus the
+          underlier.
+        </li>
+        <li>
+          App implementation maps protocol YT/PT to income and price rails (e.g.{" "}
+          <span className="font-mono text-foreground">xdSPY</span> /{" "}
+          <span className="font-mono text-foreground">xpSPY</span>) for SPY xStock.
+        </li>
+        <li>
+          Oracle updates are pull-based; stale or invalid Pyth VAAs revert sensitive
+          operations.
+        </li>
       </ul>
     ),
   },
   {
     id: "economics",
     section: "07 — Token economics",
-    title: "Fees and dx yield",
+    title: "Fees and YT carry",
     contentAlign: "start",
     splitBodyVisual: true,
     visual: <AnimApyMeter target={14} className="items-end" />,
     body: (
       <div className="w-full max-w-2xl">
-        <div className="overflow-hidden rounded-2xl border border-white/10">
+        <div className="overflow-hidden rounded-2xl border border-border">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-white/10 font-mono text-xs text-white/40">
+              <tr className="border-b border-border font-mono text-xs text-muted-foreground">
                 <th className="p-3">Fee</th>
                 <th className="p-3">Rate</th>
                 <th className="p-3">To</th>
               </tr>
             </thead>
-            <tbody className="text-white/55">
-              <tr className="border-b border-white/[0.06]">
-                <td className="p-3">Open</td>
+            <tbody className="text-muted-foreground">
+              <tr className="border-b border-border/60">
+                <td className="p-3">Open (example)</td>
                 <td className="p-3 font-mono text-accent">0.05%</td>
                 <td className="p-3">USDC LP</td>
               </tr>
               <tr>
-                <td className="p-3">Short reserve</td>
+                <td className="p-3">Short reserve (example)</td>
                 <td className="p-3">0.025%</td>
-                <td className="p-3">px reserve</td>
+                <td className="p-3">price-leg reserve</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p className="mt-4 font-mono text-xs text-white/35">
-          SPY example: ~1.3% div + session fees yields ~12-16% est. dx APY (not
-          guaranteed).
+        <p className="mt-4 font-mono text-xs text-muted-foreground/80">
+          Illustrative xStock rail: ~1.3% dividend yield plus trading and session fees
+          can compound into a wide YT holder range (e.g. low teens % in some models).
+          Not a promise of returns.
         </p>
       </div>
     ),
@@ -323,23 +375,25 @@ const slides: SlideDef[] = [
     visual: <AnimPhaseDots active={3} />,
     body: (
       <div className="mt-8 w-full max-w-2xl text-left">
-        <ul className="space-y-3 text-sm text-white/55">
+        <ul className="space-y-3 text-sm text-muted-foreground">
           <li>
-            <span className="font-mono text-accent">W1-3</span> Foundation and vault
-            with invariant-tested accumulator.
+            <span className="font-mono text-accent">Phase 1</span> SY standard,
+            dividend-tokenization, and audited accrual logic for the first underliers.
           </li>
           <li>
-            <span className="font-mono text-accent">W4-6</span> Exchange, multi-asset
-            (AAPL, ABT, SPY), testnet keeper.
+            <span className="font-mono text-accent">Phase 2</span> xStream AMM live,
+            multi-name xStock support (e.g. AAPL, ABT, SPY), testnet keeper and
+            listings.
           </li>
           <li>
-            <span className="font-mono text-accent">W8-10</span> Audit remediation;
-            <span className="font-mono text-white/50"> W11 </span>
-            mainnet launch targets from PRD.
+            <span className="font-mono text-accent">Phase 3</span> External audit
+            remediation, mainnet launch, Community Listing Portal and curated app
+            catalog.
           </li>
         </ul>
-        <p className="mt-8 font-mono text-xs text-white/35">
-          Success: TVL, session volume, keeper uptime, clean dividend claims.
+        <p className="mt-8 font-mono text-xs text-muted-foreground/80">
+          Success: TVL in SY, AMM volume, keeper uptime, predictable YT claims, and
+          orderly PT/YT basis versus underliers.
         </p>
       </div>
     ),
@@ -410,9 +464,9 @@ export default function PitchDeck() {
   }, [goNext, goPrev]);
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#0a0a0a] text-foreground">
-      <div className="pointer-events-none absolute inset-0 bg-grid opacity-40" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(200,255,0,0.06),transparent_55%)]" />
+    <div className="fixed inset-0 z-[100] bg-background text-foreground">
+      <div className="pointer-events-none absolute inset-0 bg-grid opacity-70" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(77,122,0,0.10),transparent_55%)]" />
 
       {/* Top bar */}
       <div className="pointer-events-auto absolute left-0 right-0 top-0 z-[110] flex items-center justify-between px-4 py-4 sm:px-6">
@@ -420,15 +474,15 @@ export default function PitchDeck() {
           href="/"
           iconSize={28}
           imageClassName="opacity-90"
-          textClassName="text-base text-white/90 transition-colors group-hover:text-white"
-          className="text-sm text-white/70 transition-colors hover:text-white"
+          textClassName="text-base"
+          className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           suffix={
-            <span className="font-mono text-xs uppercase tracking-widest text-white/50 group-hover:text-white/80">
+            <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground group-hover:text-foreground">
               pitch
             </span>
           }
         />
-        <span className="hidden font-mono text-[10px] text-white/35 sm:block">
+        <span className="hidden font-mono text-[10px] text-muted-foreground/80 sm:block">
           arrows / space to navigate
         </span>
       </div>
@@ -458,7 +512,7 @@ export default function PitchDeck() {
       </div>
 
       {/* Counter */}
-      <div className="pointer-events-none absolute bottom-4 right-4 z-[110] font-mono text-xs text-white/40 sm:bottom-6 sm:right-6">
+      <div className="pointer-events-none absolute bottom-4 right-4 z-[110] font-mono text-xs text-muted-foreground sm:bottom-6 sm:right-6">
         {String(current + 1).padStart(2, "0")} /{" "}
         {String(slides.length).padStart(2, "0")}
       </div>
@@ -469,7 +523,7 @@ export default function PitchDeck() {
           type="button"
           onClick={goPrev}
           disabled={current === 0}
-          className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/70 transition-colors hover:border-accent/40 hover:text-accent disabled:pointer-events-none disabled:opacity-25"
+          className="flex size-11 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-accent/50 hover:text-accent disabled:pointer-events-none disabled:opacity-25"
           aria-label="Previous slide"
         >
           <ChevronLeft className="size-5" />
@@ -478,7 +532,7 @@ export default function PitchDeck() {
           type="button"
           onClick={goNext}
           disabled={current === slides.length - 1}
-          className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.04] text-white/70 transition-colors hover:border-accent/40 hover:text-accent disabled:pointer-events-none disabled:opacity-25"
+          className="flex size-11 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-accent/50 hover:text-accent disabled:pointer-events-none disabled:opacity-25"
           aria-label="Next slide"
         >
           <ChevronRight className="size-5" />
@@ -522,7 +576,7 @@ export default function PitchDeck() {
                   {slide.section}
                 </p>
                 <h2
-                  className={`font-[family-name:var(--font-safira)] text-4xl text-white md:text-5xl lg:text-6xl ${
+                  className={`font-[family-name:var(--font-safira)] text-4xl text-foreground md:text-5xl lg:text-6xl ${
                     slide.centerTitle ? "mt-4 max-w-3xl" : "mt-4 max-w-4xl text-left"
                   }`}
                 >

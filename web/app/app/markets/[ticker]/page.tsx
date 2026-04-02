@@ -544,7 +544,7 @@ function GrandmaDetail({ asset }: { asset: Asset }) {
         <CardContent className="p-6 text-center space-y-4">
           <LogoIcon asset={asset} size="lg" />
           <div>
-            <h1 className="font-[family-name:var(--font-safira)] text-2xl tracking-tight">
+            <h1 className="font-[family-name:var(--font-safira)] text-2xl md:text-3xl tracking-tight">
               {asset.name}
             </h1>
             <p className="text-xs text-muted-foreground mt-1">{asset.ticker}</p>

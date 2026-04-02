@@ -142,10 +142,10 @@ function ExpertDashboard() {
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       {/* Welcome */}
       <motion.div {...fadeUp} transition={{ delay: 0 }}>
-        <h1 className="font-[family-name:var(--font-safira)] text-4xl md:text-5xl tracking-tight">
+        <h1 className="font-bold text-2xl md:text-5xl tracking-tight">
           Welcome back
         </h1>
-        <p className="text-muted-foreground text-base mt-2">
+        <p className="text-muted-foreground text-sm mt-1">
           Your portfolio overview and market snapshot.
         </p>
       </motion.div>
@@ -176,9 +176,8 @@ function ExpertDashboard() {
                     </Badge>
                   ) : (
                     <span
-                      className={`text-xs font-medium ${
-                        stat.positive ? "text-green-500" : "text-red-500"
-                      }`}
+                      className={`text-xs font-medium ${stat.positive ? "text-green-500" : "text-red-500"
+                        }`}
                     >
                       {stat.change}
                     </span>
@@ -348,11 +347,10 @@ function ExpertDashboard() {
                   <div className="flex items-center justify-between py-3">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`rounded-lg p-2 ${
-                          tx.positive
+                        className={`rounded-lg p-2 ${tx.positive
                             ? "bg-green-500/10 text-green-500"
                             : "bg-red-500/10 text-red-500"
-                        }`}
+                          }`}
                       >
                         {tx.positive ? (
                           <ArrowUpRight className="size-4" />
@@ -392,10 +390,10 @@ function GrandmaDashboard() {
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl mx-auto">
       <motion.div {...fadeUp}>
-        <h1 className="font-[family-name:var(--font-safira)] text-4xl md:text-5xl tracking-tight">
+        <h1 className="font-bold text-2xl md:text-3xl tracking-tight">
           Welcome back!
         </h1>
-        <p className="text-muted-foreground text-base mt-2">
+        <p className="text-muted-foreground text-sm mt-1">
           Here is how your money is doing.
         </p>
       </motion.div>

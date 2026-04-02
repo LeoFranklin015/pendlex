@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { motion, useInView, useAnimation } from "framer-motion";
+import { useRef } from "react";
+import { motion, useInView } from "framer-motion";
 
 // ---------------------------------------------------------------------------
 // Panel 1 -- Token Splitting
@@ -23,12 +23,12 @@ function TokenSplitSVG() {
             </feMerge>
           </filter>
           <radialGradient id="xspy-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#c8ff00" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#c8ff00" stopOpacity="0.05" />
+            <stop offset="0%" stopColor="#4d7a00" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#4d7a00" stopOpacity="0.04" />
           </radialGradient>
           <radialGradient id="dx-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#c8ff00" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#c8ff00" stopOpacity="0.05" />
+            <stop offset="0%" stopColor="#4d7a00" stopOpacity="0.26" />
+            <stop offset="100%" stopColor="#4d7a00" stopOpacity="0.04" />
           </radialGradient>
           <radialGradient id="px-grad" cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.4" />
@@ -41,7 +41,7 @@ function TokenSplitSVG() {
           cx="130" cy="60"
           r="34"
           fill="url(#xspy-grad)"
-          stroke="#c8ff00"
+          stroke="#4d7a00"
           strokeWidth="1.5"
           filter="url(#glow-ts)"
           animate={inView
@@ -53,7 +53,7 @@ function TokenSplitSVG() {
           x="130" y="55"
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="#c8ff00"
+          fill="#4d7a00"
           fontSize="9"
           fontWeight="700"
           fontFamily="monospace"
@@ -66,7 +66,7 @@ function TokenSplitSVG() {
           x="130" y="68"
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="#c8ff00"
+          fill="#4d7a00"
           fontSize="7"
           fontFamily="monospace"
           opacity="0.6"
@@ -79,7 +79,7 @@ function TokenSplitSVG() {
         {/* Split arrows */}
         <motion.path
           d="M 110 95 L 80 128"
-          stroke="#c8ff00"
+          stroke="#4d7a00"
           strokeWidth="1"
           strokeDasharray="4 3"
           fill="none"
@@ -103,7 +103,7 @@ function TokenSplitSVG() {
           cx="72" cy="145"
           r="27"
           fill="url(#dx-grad)"
-          stroke="#c8ff00"
+          stroke="#4d7a00"
           strokeWidth="1.5"
           filter="url(#glow-ts)"
           animate={inView ? { opacity: [0, 0, 1], x: [30, 20, 0] } : { opacity: 0 }}
@@ -113,7 +113,7 @@ function TokenSplitSVG() {
           x="72" y="141"
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="#c8ff00"
+          fill="#4d7a00"
           fontSize="7.5"
           fontWeight="700"
           fontFamily="monospace"
@@ -126,7 +126,7 @@ function TokenSplitSVG() {
           x="72" y="153"
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="#c8ff00"
+          fill="#4d7a00"
           fontSize="6"
           fontFamily="monospace"
           opacity="0.6"
@@ -221,8 +221,8 @@ function YieldCurveSVG() {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-[260px]">
         <defs>
           <linearGradient id="yield-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#c8ff00" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#c8ff00" stopOpacity="0.01" />
+            <stop offset="0%" stopColor="#4d7a00" stopOpacity="0.16" />
+            <stop offset="100%" stopColor="#4d7a00" stopOpacity="0.01" />
           </linearGradient>
           <filter id="glow-yc">
             <feGaussianBlur stdDeviation="2" result="blur" />
@@ -260,7 +260,7 @@ function YieldCurveSVG() {
         <motion.path
           d={linePath}
           fill="none"
-          stroke="#c8ff00"
+          stroke="#4d7a00"
           strokeWidth="1.8"
           filter="url(#glow-yc)"
           strokeDasharray="300"
@@ -273,7 +273,7 @@ function YieldCurveSVG() {
           cx={pts[pts.length - 1][0]}
           cy={pts[pts.length - 1][1]}
           r="3.5"
-          fill="#c8ff00"
+          fill="#4d7a00"
           filter="url(#glow-yc)"
           animate={inView ? { opacity: [0, 0, 1], scale: [0.5, 0.5, 1] } : { opacity: 0 }}
           transition={{ duration: 0.4, delay: 2.2, repeat: Infinity, repeatDelay: 2.2 }}
@@ -356,7 +356,7 @@ function SessionSVG() {
   const r = 48;
   const strokeW = 16;
 
-  // 80% lime, 20% dark
+  // 80% primary, 20% dark
   const circ = 2 * Math.PI * r;
   const lime80 = circ * 0.8;
   const gray20 = circ * 0.2;
@@ -399,11 +399,11 @@ function SessionSVG() {
           transition={{ duration: 1.2, delay: 1.2, ease: "easeOut", repeat: Infinity, repeatDelay: 2 }}
         />
 
-        {/* 80% lime slice */}
+        {/* 80% primary slice */}
         <motion.circle
           cx={cx} cy={cy} r={r}
           fill="none"
-          stroke="#c8ff00"
+          stroke="#4d7a00"
           strokeWidth={strokeW}
           strokeDasharray={`${lime80} ${circ - lime80}`}
           strokeLinecap="butt"
@@ -422,14 +422,14 @@ function SessionSVG() {
         >
           {/* Lock body */}
           <rect x={cx - 9} y={cy - 4} width="18" height="14" rx="3"
-            fill="none" stroke="#c8ff00" strokeWidth="1.4" />
+            fill="none" stroke="#4d7a00" strokeWidth="1.4" />
           {/* Lock shackle */}
           <path
             d={`M ${cx - 5.5} ${cy - 4} v-6 a5.5 5.5 0 0 1 11 0 v6`}
-            fill="none" stroke="#c8ff00" strokeWidth="1.4"
+            fill="none" stroke="#4d7a00" strokeWidth="1.4"
           />
           {/* Keyhole */}
-          <circle cx={cx} cy={cy + 3} r="2" fill="#c8ff00" opacity="0.8" />
+          <circle cx={cx} cy={cy + 3} r="2" fill="#4d7a00" opacity="0.8" />
         </motion.g>
 
         {/* Labels */}
@@ -438,13 +438,13 @@ function SessionSVG() {
           transition={{ duration: 0.5, delay: 1.6, repeat: Infinity, repeatDelay: 1.8 }}
         >
           {/* 80% label -- left */}
-          <circle cx="36" cy="52" r="5" fill="#c8ff00" opacity="0.15" />
+          <circle cx="36" cy="52" r="5" fill="#4d7a00" opacity="0.12" />
           <text x="36" y="52" textAnchor="middle" dominantBaseline="middle"
-            fill="#c8ff00" fontSize="6" fontWeight="700" fontFamily="monospace">
+            fill="#4d7a00" fontSize="6" fontWeight="700" fontFamily="monospace">
             80%
           </text>
           <text x="36" y="63" textAnchor="middle"
-            fill="#c8ff00" fontSize="5.5" fontFamily="sans-serif" opacity="0.7">
+            fill="#4d7a00" fontSize="5.5" fontFamily="sans-serif" opacity="0.7">
             dx holders
           </text>
 

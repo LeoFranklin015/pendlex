@@ -134,7 +134,7 @@ function ExpertPortfolio() {
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
       <motion.div {...fadeUp}>
-        <h1 className="font-[family-name:var(--font-safira)] text-2xl md:text-3xl tracking-tight">
+        <h1 className="font-bold text-2xl md:text-5xl tracking-tight">
           Portfolio
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -187,9 +187,8 @@ function ExpertPortfolio() {
                         {token.value}
                       </p>
                       <p
-                        className={`text-[10px] font-medium ${
-                          token.positive ? "text-green-500" : "text-red-500"
-                        }`}
+                        className={`text-[10px] font-medium ${token.positive ? "text-green-500" : "text-red-500"
+                          }`}
                       >
                         {token.change}
                       </p>
@@ -326,11 +325,10 @@ function ExpertPortfolio() {
                           <td className="py-2.5">
                             <Badge
                               variant="secondary"
-                              className={`text-[10px] ${
-                                pos.direction === "Long"
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              }`}
+                              className={`text-[10px] ${pos.direction === "Long"
+                                ? "text-green-500"
+                                : "text-red-500"
+                                }`}
                             >
                               {pos.direction === "Long" ? (
                                 <TrendingUp className="size-3 mr-1" />
@@ -353,9 +351,8 @@ function ExpertPortfolio() {
                             {pos.current}
                           </td>
                           <td
-                            className={`text-right py-2.5 font-mono font-medium ${
-                              pos.positive ? "text-green-500" : "text-red-500"
-                            }`}
+                            className={`text-right py-2.5 font-mono font-medium ${pos.positive ? "text-green-500" : "text-red-500"
+                              }`}
                           >
                             <div>{pos.pnl}</div>
                             <div className="text-[10px]">
@@ -462,7 +459,7 @@ function GrandmaPortfolio() {
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl mx-auto">
       <motion.div {...fadeUp}>
-        <h1 className="font-[family-name:var(--font-safira)] text-2xl md:text-3xl tracking-tight">
+        <h1 className="font-bold text-2xl md:text-3xl tracking-tight">
           Your Holdings
         </h1>
         <p className="text-muted-foreground text-sm mt-1">

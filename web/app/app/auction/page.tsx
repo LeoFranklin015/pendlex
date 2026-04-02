@@ -616,7 +616,7 @@ function AuctionPageInner() {
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
       >
         <div>
-          <h1 className="font-[family-name:var(--font-safira)] text-2xl md:text-3xl tracking-tight text-foreground">
+          <h1 className="font-bold text-2xl md:text-5xl tracking-tight text-foreground">
             Auction
           </h1>
           <p className="text-sm text-muted-foreground mt-1">

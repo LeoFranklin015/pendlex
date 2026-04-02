@@ -5,22 +5,18 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/constants";
 
-/** Title slide: xStock splits into dx + px (div connectors only) */
+/** Title slide: SY splits into YT + PT (README dividend-tokenization) */
 export function AnimSplitTokens() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-10">
       <div className="flex w-full items-center justify-center gap-3 sm:gap-5 md:gap-8">
         <motion.div
-          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 font-mono text-[10px] sm:text-xs"
-          style={{
-            borderColor: "rgba(200,255,0,0.6)",
-            backgroundColor: "rgba(200,255,0,0.08)",
-          }}
+          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-accent/50 bg-accent/10 font-mono text-[10px] sm:text-xs"
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.45, type: "spring", stiffness: 140, damping: 16 }}
         >
-          <span className="font-medium text-accent">dx</span>
+          <span className="font-medium text-accent">YT</span>
         </motion.div>
 
         <div className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">
@@ -32,15 +28,16 @@ export function AnimSplitTokens() {
             style={{ transformOrigin: "right center" }}
           />
           <motion.div
-            className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 border-white/20 bg-white/[0.04] font-mono text-xs text-white/50"
+            className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-full border-2 border-border bg-muted px-1 font-mono text-[10px] text-muted-foreground sm:text-xs"
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.55 }}
           >
-            xStock
+            <span>SY</span>
+            <span className="mt-0.5 text-[8px] opacity-70">wrapped</span>
           </motion.div>
           <motion.div
-            className="h-0.5 flex-1 rounded-full bg-white/25"
+            className="h-0.5 flex-1 rounded-full bg-foreground/15"
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.45, ease: "easeOut" }}
@@ -49,22 +46,22 @@ export function AnimSplitTokens() {
         </div>
 
         <motion.div
-          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-white/25 bg-white/[0.06] font-mono text-[10px] text-white/80 sm:text-xs"
+          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-border bg-card font-mono text-[10px] text-foreground sm:text-xs"
           initial={{ opacity: 0, scale: 0.6 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.55, type: "spring", stiffness: 140, damping: 16 }}
         >
-          px
+          PT
         </motion.div>
       </div>
 
       <motion.p
-        className="font-mono text-[10px] text-white/35"
+        className="font-mono text-[10px] text-muted-foreground"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
       >
-        one deposit, two instruments
+        dividend-tokenization: yield vs principal
       </motion.p>
     </div>
   );
@@ -121,10 +118,10 @@ function ArchNode({
 }) {
   return (
     <motion.div
-      className={`rounded-xl border px-3 py-2 font-mono text-[9px] text-white/75 sm:text-[10px] ${
+      className={`rounded-xl border px-3 py-2 font-mono text-[9px] sm:text-[10px] ${
         isAccent
-          ? "border-accent/35 bg-accent/[0.06] text-white/90"
-          : "border-white/10 bg-white/[0.04]"
+          ? "border-accent/35 bg-accent/10 text-foreground"
+          : "border-border bg-muted text-foreground/80"
       }`}
       initial={{ opacity: 0, scale: 0.92 }}
       whileInView={{ opacity: 1, scale: 1 }}
@@ -143,7 +140,7 @@ export function AnimArchitectureFlow() {
       <ArchNode label="Users" />
 
       <motion.div
-        className="h-10 w-px bg-gradient-to-b from-white/30 to-accent/40"
+        className="h-10 w-px bg-gradient-to-b from-foreground/20 to-accent/40"
         initial={{ scaleY: 0, opacity: 0 }}
         whileInView={{ scaleY: 1, opacity: 1 }}
         viewport={{ once: true }}
@@ -153,7 +150,7 @@ export function AnimArchitectureFlow() {
 
       <div className="flex w-full items-start justify-between gap-2 px-1 sm:gap-4">
         <div className="flex flex-1 flex-col items-center gap-2">
-          <ArchNode label="Vault" accent />
+          <ArchNode label="SY + split" accent />
           <motion.div
             className="h-8 w-px bg-accent/45"
             initial={{ scaleY: 0 }}
@@ -168,7 +165,7 @@ export function AnimArchitectureFlow() {
         <div className="flex flex-1 flex-col items-center gap-2 pt-10 sm:pt-12">
           <ArchNode label="Exchange" />
           <motion.div
-            className="h-8 w-px bg-white/20"
+            className="h-8 w-px bg-foreground/15"
             initial={{ scaleY: 0 }}
             whileInView={{ scaleY: 1 }}
             viewport={{ once: true }}
@@ -186,7 +183,7 @@ export function AnimArchitectureFlow() {
         viewport={{ once: true }}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-        <span className="font-mono text-[10px] text-white/35">Base + Pyth pull</span>
+        <span className="font-mono text-[10px] text-muted-foreground">Base + Pyth pull</span>
       </motion.div>
     </div>
   );
@@ -219,7 +216,7 @@ export function AnimApyMeter({
       <span className="font-[family-name:var(--font-safira)] text-6xl tabular-nums text-accent md:text-7xl">
         {display}
       </span>
-      <span className="font-mono text-xs text-white/40">est. dx APY mid (%)</span>
+        <span className="font-mono text-xs text-muted-foreground">illustrative YT yield (%)</span>
     </div>
   );
 }
@@ -247,8 +244,8 @@ export function AnimAccumulatorPulse({ className }: { className?: string }) {
           }}
         />
       ))}
-      <span className="relative z-10 font-mono text-xs text-white/50">
-        accDivPerShare 1e36
+      <span className="relative z-10 font-mono text-xs text-muted-foreground">
+        dividends accrue to YT
       </span>
     </div>
   );
@@ -263,7 +260,7 @@ export function AnimPhaseDots({ active = 3 }: { active?: number }) {
         <motion.div
           key={p}
           className={`h-2 rounded-full ${
-            i === active ? "w-8 bg-accent" : "w-2 bg-white/20"
+            i === active ? "w-8 bg-accent" : "w-2 bg-foreground/20"
           }`}
           initial={{ scale: 0.8, opacity: 0 }}
           whileInView={{ scale: 1, opacity: 1 }}

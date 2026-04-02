@@ -25,7 +25,7 @@ export function LogoWordmark({
   href = "/",
   className,
   iconSize = 32,
-  textClassName = "text-2xl",
+  textClassName = "text-md",
   suffix,
   imageClassName,
 }: LogoWordmarkProps) {
@@ -46,11 +46,11 @@ export function LogoWordmark({
         alt={`${APP_NAME} logo`}
         width={iconSize}
         height={iconSize}
-        className={cn(dim, imageClassName) + "filter invert -mb-2"}
+        className={cn(dim, imageClassName) + "filter invert -mx-2"}
       />
       <span
         className={cn(
-          "font-[family-name:var(--font-safira)] tracking-tight text-foreground",
+          "font-medium tracking-tight text-foreground",
           textClassName
         )}
       >

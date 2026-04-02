@@ -14,6 +14,7 @@ import {
   List,
   ChevronDown,
   Circle,
+  Sparkles,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -356,6 +357,98 @@ function AssetRow({ asset, sparkline, apy }: { asset: Asset; sparkline?: { v: nu
   );
 }
 
+function ComingSoonMarketCard() {
+  return (
+    <Card
+      className="overflow-hidden border-dashed border-border/80 bg-muted/15 ring-foreground/5 cursor-default select-none"
+      aria-label="More markets coming soon"
+    >
+      <div className="px-4 pt-4 pb-2 flex items-center gap-3">
+        <div className="size-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 ring-1 ring-foreground/10">
+          <Sparkles className="size-5 text-muted-foreground" aria-hidden />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium text-foreground">More markets</p>
+            <Badge
+              variant="secondary"
+              className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground border border-border/60"
+            >
+              Coming soon
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Additional xStocks and listings
+          </p>
+        </div>
+      </div>
+
+      <div className="mx-3 mb-3 rounded-lg overflow-hidden bg-muted/25 border border-dashed border-border/50">
+        <div className="px-4 pt-3 pb-2">
+          <p className="text-lg font-medium text-muted-foreground tracking-tight">
+            Stay tuned
+          </p>
+          <p className="text-xs text-muted-foreground/80 mt-1">
+            We are expanding coverage. You will see new tickers here.
+          </p>
+        </div>
+        <div className="h-[100px] flex items-center justify-center border-t border-dashed border-border/40 bg-muted/20">
+          <div className="flex gap-1" aria-hidden>
+            <span className="size-1.5 rounded-full bg-muted-foreground/30 animate-pulse" />
+            <span
+              className="size-1.5 rounded-full bg-muted-foreground/30 animate-pulse"
+              style={{ animationDelay: "150ms" }}
+            />
+            <span
+              className="size-1.5 rounded-full bg-muted-foreground/30 animate-pulse"
+              style={{ animationDelay: "300ms" }}
+            />
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function ComingSoonMarketRow() {
+  return (
+    <div
+      className="flex items-center justify-between py-3 px-4 border-b border-dashed border-border/60 last:border-0 bg-muted/10 cursor-default select-none"
+      aria-label="More markets coming soon"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="size-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 ring-1 ring-foreground/10">
+          <Sparkles className="size-4 text-muted-foreground" aria-hidden />
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium text-foreground">More markets</p>
+            <Badge
+              variant="secondary"
+              className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground border border-border/60"
+            >
+              Coming soon
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground truncate">
+            Additional xStocks and listings
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-6">
+        <div className="w-[100px] h-[40px] hidden sm:flex items-center justify-center rounded-md border border-dashed border-border/50 bg-muted/20">
+          <span className="text-[10px] font-mono text-muted-foreground">...</span>
+        </div>
+        <div className="text-right min-w-[100px]">
+          <p className="text-sm font-medium text-muted-foreground">--</p>
+          <p className="text-xs text-muted-foreground/80">Stay tuned</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---- Grandma Markets ----
 
 function GrandmaMarkets() {
@@ -366,10 +459,10 @@ function GrandmaMarkets() {
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl mx-auto">
       <motion.div {...fadeUp}>
-        <h1 className="font-[family-name:var(--font-safira)] text-4xl md:text-5xl tracking-tight">
+        <h1 className="font-bold text-2xl md:text-3xl tracking-tight">
           Available Investments
         </h1>
-        <p className="text-muted-foreground text-base mt-2">
+        <p className="text-muted-foreground text-sm mt-1">
           Browse assets you can invest in.
         </p>
       </motion.div>
@@ -476,13 +569,21 @@ function ExpertMarkets() {
 
   return (
     <div className="p-4 md:p-6 pb-12 space-y-8 max-w-7xl mx-auto">
+      <motion.div {...fadeUp}>
+        <h1 className="font-bold text-2xl md:text-5xl tracking-tight">Markets</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Live prices, movers, and tokenized stock listings.
+        </p>
+      </motion.div>
+
       {/* Top Section */}
       <motion.div
         {...fadeUp}
+        transition={{ delay: 0.03 }}
         className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8"
       >
-        <TopGainers assets={assets} />
         <TrendingAssets assets={assets} />
+        <TopGainers assets={assets} />
         <AllAssetsList assets={assets} />
       </motion.div>
 
@@ -492,7 +593,7 @@ function ExpertMarkets() {
       <motion.div {...fadeUp} transition={{ delay: 0.05 }}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-2">
-            <h2 className="font-[family-name:var(--font-safira)] text-2xl md:text-3xl tracking-tight text-foreground">
+            <h2 className="font-bold text-xl md:text-2xl tracking-tight text-foreground">
               Explore xStocks
             </h2>
             <span className="text-xs text-muted-foreground align-super">
@@ -525,11 +626,10 @@ function ExpertMarkets() {
               <button
                 key={opt}
                 onClick={() => setActiveFilter(opt)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
-                  activeFilter === opt
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${activeFilter === opt
                     ? "border-foreground/40 bg-foreground/10 text-foreground"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                }`}
+                  }`}
               >
                 {opt}
               </button>
@@ -540,21 +640,19 @@ function ExpertMarkets() {
               <div className="flex items-center rounded-lg border border-border/50 p-0.5">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    viewMode === "grid"
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === "grid"
                       ? "bg-foreground/10 text-foreground"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <LayoutGrid className="size-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-1.5 rounded-md transition-colors ${
-                    viewMode === "list"
+                  className={`p-1.5 rounded-md transition-colors ${viewMode === "list"
                       ? "bg-foreground/10 text-foreground"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <List className="size-4" />
                 </button>
@@ -583,11 +681,10 @@ function ExpertMarkets() {
                             setSortBy(opt);
                             setShowSortMenu(false);
                           }}
-                          className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
-                            sortBy === opt
+                          className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${sortBy === opt
                               ? "text-primary bg-muted/30"
                               : "text-foreground hover:bg-muted/30"
-                          }`}
+                            }`}
                         >
                           {opt}
                         </button>
@@ -617,6 +714,14 @@ function ExpertMarkets() {
                 <AssetCard asset={asset} sparkline={sparklines[asset.ticker]} apy={apyMap[asset.ticker]} />
               </motion.div>
             ))}
+            <motion.div
+              key="coming-soon-market"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: filtered.length * 0.03 }}
+            >
+              <ComingSoonMarketCard />
+            </motion.div>
           </div>
         ) : (
           <Card className="overflow-hidden">
@@ -630,6 +735,14 @@ function ExpertMarkets() {
                 <AssetRow asset={asset} sparkline={sparklines[asset.ticker]} apy={apyMap[asset.ticker]} />
               </motion.div>
             ))}
+            <motion.div
+              key="coming-soon-market-row"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: filtered.length * 0.02 }}
+            >
+              <ComingSoonMarketRow />
+            </motion.div>
           </Card>
         )}
       </motion.div>

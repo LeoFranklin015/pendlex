@@ -38,6 +38,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { APP_NAME_FULL } from "@/lib/constants";
 import { LogoWordmark } from "@/components/LogoWordmark";
+import { MarketTickerMarquee } from "@/components/MarketTickerMarquee";
 import TermsGate from "@/components/TermsGate";
 import { type Network } from "@/components/NetworkSelector";
 import { ModeProvider, useAppMode } from "@/lib/mode-context";
@@ -236,6 +237,7 @@ function WalletPanel({
             onClick={login}
             className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-medium text-xs h-8"
           >
+            <Wallet />
             Connect Wallet
           </Button>
         )}
@@ -401,7 +403,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             textClassName="text-sm sm:text-base"
           />
 
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Circle
               className={`size-2 fill-current ${session.open ? "text-green-500" : "text-red-500"}`}
             />
@@ -409,6 +411,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
               {session.label}
             </span>
           </div>
+
+          <MarketTickerMarquee />
         </header>
 
         {/* Page content */}

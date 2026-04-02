@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
-import { Menu } from "lucide-react";
+import { Menu, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -59,9 +59,10 @@ export default function Navbar() {
           ) : (
             <Button
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+              className="bg-primary py-4 text-primary-foreground hover:bg-primary/80 font-medium"
               onClick={login}
             >
+              <Wallet />
               Connect Wallet
             </Button>
           )}
@@ -105,12 +106,13 @@ export default function Navbar() {
                     </Button>
                   ) : (
                     <Button
-                      className="w-full bg-primary text-primary-foreground hover:bg-primary/80 font-medium"
+                      className="w-full bg-primary py-4 text-primary-foreground hover:bg-primary/80 font-medium"
                       onClick={() => {
                         login();
                         setOpen(false);
                       }}
                     >
+                      <Wallet />
                       Connect Wallet
                     </Button>
                   )}

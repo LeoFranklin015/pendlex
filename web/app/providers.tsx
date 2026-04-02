@@ -11,9 +11,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         appearance: {
           theme: "light",
           accentColor: "#4d7a00",
-          logo: "/logo-transparent.png",
+          logo: "/android-chrome-192x192.png",
         },
-        loginMethods: ["wallet", "email"],
+        loginMethods: ["wallet", "google", "email"],
         defaultChain: inkSepolia,
         supportedChains: [inkSepolia, sepolia],
         embeddedWallets: {

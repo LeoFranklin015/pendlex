@@ -1,5 +1,5 @@
 /** Product wordmark (headers, UI) */
-export const APP_NAME = "xStream";
+export const APP_NAME = "STREAM";
 /** Full legal-style product name */
 export const APP_NAME_FULL = "xStream Markets";
 

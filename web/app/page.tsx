@@ -208,7 +208,7 @@ export default function Home() {
       {/* Hero                                                              */}
       {/* ----------------------------------------------------------------- */}
       <section className="relative overflow-hidden bg-background">
-        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 pb-16 sm:px-6 lg:grid-cols-2 lg:gap-10 lg:px-8 ">
+        <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-2 lg:gap-10 lg:px-8 ">
           <div className="mb-24 flex flex-col text-center justify-start items-start lg:text-left">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -286,7 +286,7 @@ export default function Home() {
             className="flex w-full justify-center lg:justify-end lg:pl-4"
             aria-hidden
           >
-            <Globe className="w-full pb-[500px] max-w-[min(100%,560px)] lg:max-w-[min(100%,640px)]" />
+            <Globe className="w-full max-w-[min(100%,560px)] lg:max-w-[min(100%,640px)]" />
           </motion.div>
         </div>
       </section>
@@ -320,7 +320,7 @@ export default function Home() {
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ delay: i * 0.15, duration: 0.6 }}
               >
-                <Card className="relative h-full border-l-2 border-l-primary/40 bg-card/60">
+                <Card className="relative h-full border-l-2 border-l-primary/40 bg-card/60 py-4">
                   <CardHeader>
                     <div className="flex items-center gap-3">
                       <span className="font-[family-name:var(--font-safira)] text-2xl text-primary">
@@ -368,7 +368,7 @@ export default function Home() {
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.6 }}
           >
-            <Card className="h-full border-t-2 border-t-primary/60">
+            <Card className="h-full border-t-2 border-t-primary/60 py-4">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
@@ -419,7 +419,7 @@ export default function Home() {
             viewport={{ once: true, margin: "-60px" }}
             transition={{ duration: 0.6 }}
           >
-            <Card className="h-full border-t-2 border-t-primary/60">
+            <Card className="h-full border-t-2 border-t-primary/60 py-4">
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
@@ -490,7 +490,7 @@ export default function Home() {
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
               >
-                <Card className="h-full bg-card/60">
+                <Card className="h-full bg-card/60 py-4">
                   <CardHeader>
                     <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
                       <Icon className="size-5 text-primary" />

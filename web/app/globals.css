@@ -176,3 +176,24 @@ button {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Bloomberg-style ticker in app header */
+@keyframes ticker-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.ticker-marquee-track {
+  animation: ticker-marquee 28s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-marquee-track {
+    animation: none;
+    transform: none;
+  }
+}
