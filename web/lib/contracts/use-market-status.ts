@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { type PublicClient, type Address } from "viem";
 import { MARKET_KEEPER_ABI } from "./abis/MarketKeeper";
 
@@ -11,30 +11,43 @@ export function useMarketStatus(
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const check = useCallback(async () => {
-    if (!publicClient || !marketKeeperAddress) {
-      setLoading(false);
-      return;
-    }
-    try {
-      const open = await publicClient.readContract({
-        address: marketKeeperAddress,
-        abi: MARKET_KEEPER_ABI,
-        functionName: "isMarketOpen",
-      });
-      setIsOpen(open as boolean);
-    } catch {
-      setIsOpen(false);
-    } finally {
-      setLoading(false);
-    }
-  }, [publicClient, marketKeeperAddress]);
+  // Refs to avoid re-creating the effect when the caller passes a new client object each render
+  const clientRef = useRef(publicClient);
+  clientRef.current = publicClient;
+  const addrRef = useRef(marketKeeperAddress);
+  addrRef.current = marketKeeperAddress;
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function check() {
+      const client = clientRef.current;
+      const addr = addrRef.current;
+      if (!client || !addr) {
+        if (!cancelled) setLoading(false);
+        return;
+      }
+      try {
+        const open = await client.readContract({
+          address: addr,
+          abi: MARKET_KEEPER_ABI,
+          functionName: "isMarketOpen",
+        });
+        if (!cancelled) setIsOpen(open as boolean);
+      } catch {
+        if (!cancelled) setIsOpen(false);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
     check();
     const id = setInterval(check, 60_000);
-    return () => clearInterval(id);
-  }, [check]);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
-  return { isOpen, loading, refresh: check };
+  return { isOpen, loading };
 }

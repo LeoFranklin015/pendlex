@@ -7,6 +7,7 @@ import {
   createWalletClient,
   custom,
   http,
+  fallback,
   parseUnits,
   formatUnits,
 } from "viem";
@@ -68,11 +69,15 @@ export function useVault() {
     const cfg = getContractConfig(chainId, isMock);
     const provider = await wallet.getEthereumProvider();
 
-    const publicClient = createPublicClient({ chain, transport: http(getRpcUrl(chainId)) });
+    const rpcUrl = getRpcUrl(chainId);
+    const publicClient = createPublicClient({ chain, transport: http(rpcUrl) });
     const walletClient = createWalletClient({
       chain,
+      // fallback: use Alchemy for simulation (eth_call), wallet provider for signing
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      transport: custom(provider as any),
+      transport: rpcUrl
+        ? fallback([http(rpcUrl), custom(provider as any)])
+        : custom(provider as any),
     });
 
     return {
