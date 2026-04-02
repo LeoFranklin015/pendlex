@@ -1,0 +1,93 @@
+{
+  "network": "ink_sepolia",
+  "chainId": "763373",
+  "pythContract": "0x2880aB155794e7179c9eE2e38200202908C17B43",
+  "pythAdapter": "0xb26b353B4247f9db66175b333CDa74a7c068D341",
+  "usdc": "0xC80EF19a1F4F49953B0383b411a74fd50f2ca361",
+  "vault": "0x9e35DE19e3D7DB531C42fFc91Cc3a6F5Ba30B610",
+  "exchange": "0x924eb79Bb78981Afa209E45aB3E50ee9d77D1D0F",
+  "marketKeeper": "0xcF0a135097b1CA2B21ADDeae20a883D9BACE1f74",
+  "escrow": "0xC18288E58B79fAac72811dC1456515A88147e85a",
+  "assets": [
+    {
+      "name": "Tesla xStock",
+      "symbol": "TSLAxt",
+      "xStock": "0x9F64b176fEDF64a9A37ba58d372f3bd13B5F73b4",
+      "pxToken": "0x94461B0C10B371c9dE4DfFD1A08249e07c136d37",
+      "dxToken": "0x1FC97eAd7E36926bE30229762458C2B2aBB77d6F",
+      "lpToken": "0x6DfeBd1e56c26e055F3AD1FC3397EC7e68f8dD5C",
+      "pythFeedId": "0x16dad506d7db8da01c87581c87ca897a012a153557d4d578c3b9c9e1bc0632f1",
+      "isMultiplierChanging": false
+    },
+    {
+      "name": "NVIDIA xStock",
+      "symbol": "NVDAxt",
+      "xStock": "0xfeE1b917518EFa5c63C6baB841426F6A52b8581e",
+      "pxToken": "0xC1EFf33ba4fA5Ae036202Fe098030e59e078dd6D",
+      "dxToken": "0x12189923F13e0c2eD2c450189E7419E772281866",
+      "lpToken": "0x5b9D0DEE7CC10B4043E44F4EC1CE768c5c7cf745",
+      "pythFeedId": "0xb1073854ed24cbc755dc527418f52b7d271f6cc967bbf8d8129112b18860a593",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "Alphabet xStock",
+      "symbol": "GOOGLxt",
+      "xStock": "0x9eE3eb32dD9Da95Cd1D9C824701A1EcF9AE046B2",
+      "pxToken": "0x047BF5F5a416d1A0E8f98a99538CEb0c7bC9aD3B",
+      "dxToken": "0x7345c2917E2e6960C0dAc0A3079cc94b4246aC92",
+      "lpToken": "0xbc3f35De8571Ce748c82255CBA411b429572CfF8",
+      "pythFeedId": "0x5a48c03e9b9cb337801073ed9d166817473697efff0d138874e0f6a33d6d5aa6",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "Apple xStock",
+      "symbol": "AAPLxt",
+      "xStock": "0x3e3885a7106107728afEF74A0000d90D3fA3cd1e",
+      "pxToken": "0x65abD57f02D23F774631778550b33f59cA4D300D",
+      "dxToken": "0xE7fF40cAB800a5E6DB733BF30D733777eE3285b5",
+      "lpToken": "0xEF7B7faF6d25E58925A523097d3888Bccba91F6e",
+      "pythFeedId": "0x49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "SP500 xStock",
+      "symbol": "SPYxt",
+      "xStock": "0xC16212b6840001f0a4382c3Da3c3f136C5b1cC31",
+      "pxToken": "0xC6555380D2E6AAA3Ca7d803a237d4c21e0e9D1a3",
+      "dxToken": "0x928dA312a5cDAc140C7cD18F8eCBCaeb73796B9f",
+      "lpToken": "0x01aA0e0Fa5623A16DF232ade97095B5919f9E183",
+      "pythFeedId": "0x19e09bb805456ada3979a7d1cbb4b6d63babc3a0f8e8a9509f68afa5c4c11cd5",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "TBLL xStock",
+      "symbol": "TBLLxt",
+      "xStock": "0x06fdEB09bdCC13eCCC758b15DC81a45c839632d7",
+      "pxToken": "0x5e421FEAD3A1ad4A48843d1Eaea64Aa7d73a7F96",
+      "dxToken": "0x36ED5c732bA99a715e491F6601011D804ED6Fd6C",
+      "lpToken": "0x3119eDacE1c3b43e81F65F635c1E48Ef5F89409b",
+      "pythFeedId": "0x6050efb3d94369697e5cdebf4b7a14f0f503bf8cd880e24ef85f9fbc0a68feb2",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "Gold xStock",
+      "symbol": "GLDxt",
+      "xStock": "0xedB61935572130a7946B7FA9A3EC788367047E4D",
+      "pxToken": "0xAd284878a45E75E8D8e5128573a708cFc99F9730",
+      "dxToken": "0x00e2675da5031dd4d107A092C34e8E01196c7cf9",
+      "lpToken": "0xf5B69cDF448BE6e7334823b085eBD50587Bd0E77",
+      "pythFeedId": "0xe190f467043db04548200354889dfe0d9d314c08b8d4e62fabf4d5a3140fecca",
+      "isMultiplierChanging": false
+    },
+    {
+      "name": "iShares Silver Trust xStock",
+      "symbol": "SLVxt",
+      "xStock": "0x24A25fB43521D93AB57D1d57B0531fA5813a238c",
+      "pxToken": "0xD323e038Be2f630e9119c19AD152843b898902a0",
+      "dxToken": "0xeF7Dbea9B659EecD793AbD1b13c66431d6A695af",
+      "lpToken": "0xf2420295b1C1C9f9ee5a9277770e7df30abC3504",
+      "pythFeedId": "0x6fc08c9963d266069cbd9780d98383dabf2668322a5bef0b9491e11d67e5d7e7",
+      "isMultiplierChanging": false
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "network": "eth_sepolia",
+  "chainId": "11155111",
+  "mockPyth": "0x16Ddd24738b05FC80989cbd2577F606962b65C31",
+  "pythAdapter": "0x16eaB2D3E31Cc44D040Cf316141CD460F51DF50c",
+  "usdc": "0x6913883E8c11829AC213760556F3C3b35148F296",
+  "vault": "0xE7e63166543CEAE1d389e38f8b3faee8129cAfC2",
+  "exchange": "0xDbfA9BBdfAb52DCB453105D70c5991d3D1C0E34D",
+  "marketKeeper": "0x9e5b98455102F21f47d6e0A6FC6a33f4c382aE51",
+  "escrow": "0xb2131C8384599d95d2Cdd7733529Bfd7B3c68375",
+  "assets": [
+    {
+      "name": "Tesla xStock",
+      "symbol": "TSLAxt",
+      "xStock": "0x6A17dbA41Cc36D2D91662401953E0C1261d11691",
+      "pxToken": "0xAaFc8f27537cc772a3ce7eB16276021fF941F0fF",
+      "dxToken": "0x54Ec44cd91ccf53952D8835eEBBCe22c8D3fA780",
+      "lpToken": "0xd3Aa6Fc74c7bE920082934a9F572a8E49D87A011",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000001",
+      "isMultiplierChanging": false
+    },
+    {
+      "name": "NVIDIA xStock",
+      "symbol": "NVDAxt",
+      "xStock": "0xaBF78669029eCb8C1EAfDa083b7DBc57FCf2F922",
+      "pxToken": "0xD583f0017102601B7AEFA84F04608B29A677E280",
+      "dxToken": "0xefBC9157b0C1C2F4e4C6A78f77dD2cf4F393402a",
+      "lpToken": "0xf4691e1D99A4471460A07748bE2232B84a5D667a",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000002",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "Alphabet xStock",
+      "symbol": "GOOGLxt",
+      "xStock": "0xb0608574E1BB1A5e71d3af29E91d5ac3cc20bF6E",
+      "pxToken": "0x07cFbf74D23A57340Ac72920b1eD623157F3a0D5",
+      "dxToken": "0x033362eABd4da4C53F5368cDD5aBceC7a43C68e4",
+      "lpToken": "0xd850004073d185C3a06bFf0A22E098EaDC2684bc",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000003",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "Apple xStock",
+      "symbol": "AAPLxt",
+      "xStock": "0x81Fd2B54E31C7330BE0bED21bBc249eed3B4fd1D",
+      "pxToken": "0x86B705bE5591Df84a8C09B72EF24e75bc76372DC",
+      "dxToken": "0xd17A4268715d96D309F05FEC185585C6c5EcE4C4",
+      "lpToken": "0x1040d77b173DADc7B78e7E58C7425884363Ea761",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000004",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "SP500 xStock",
+      "symbol": "SPYxt",
+      "xStock": "0x8Be1f231FD67583Be902F271344a170cdF9D4866",
+      "pxToken": "0x17Fc1362C59765133F58334Ae2715131bD60d785",
+      "dxToken": "0xaE46BE587EE4417F49879baCbfd22c32B86B19FF",
+      "lpToken": "0x5F0B4c0F151Ef8D58f7Fcc4090EE5ABC861d6e4c",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000005",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "TBLL xStock",
+      "symbol": "TBLLxt",
+      "xStock": "0xd605275829Cb2Ff46D58DFe5Fe8E0AB275F49d2c",
+      "pxToken": "0x431d694F51C3d5F67945Cc6F8917516Ebb1aB328",
+      "dxToken": "0x5e825B23E41D901613cDeD6b196B979506569507",
+      "lpToken": "0xCc6584BA0f33B91909d5dc8cc5AD3DFE272D3DBc",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000006",
+      "isMultiplierChanging": true
+    },
+    {
+      "name": "Gold xStock",
+      "symbol": "GLDxt",
+      "xStock": "0x819178A165D689c4A4CeaafE05ebc8e84341E061",
+      "pxToken": "0x61191E47646F101B452d32cD882F60Ef06519C23",
+      "dxToken": "0x14355Bff9f7c61DFA3Dda6A5E02D52ad440A099C",
+      "lpToken": "0x1999c69eC41275f810AcAba670C04cc149e40075",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000007",
+      "isMultiplierChanging": false
+    },
+    {
+      "name": "iShares Silver Trust xStock",
+      "symbol": "SLVxt",
+      "xStock": "0x6e0DD81631af17c297201CeD8Bd5C4B6c59Baf08",
+      "pxToken": "0x3ce817E805D03e977e67d9d0D03b1Ee8144155cb",
+      "dxToken": "0x523B8841a1e5513139d56eb377A04C1DB8D9c05B",
+      "lpToken": "0x15f4523b44670fC2837d6adE74B6B14B08ea98E1",
+      "pythFeedId": "0x0000000000000000000000000000000000000000000000000000000000000008",
+      "isMultiplierChanging": false
+    }
+  ]
+}
